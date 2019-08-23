@@ -5,8 +5,12 @@ type Source interface {
 	Uint32() uint32
 }
 
-// UniformUint32 returns a uniformly-distributed number in the range 0 to n-1 (inclusive).
+// UniformUint32 returns a uniformly-distributed number in the range 0 to n-1 (inclusive). n must be non-zero.
 func UniformUint32(src Source, n uint32) uint32 {
+	if n == 0 {
+		panic("n must be non-zero in call to UniformUint32")
+	}
+
 	// The algorithm below is taken from Lemire's "Fast Random Integer Generation in an Interval", available at
 	// https://arxiv.org/abs/1805.10941 . See also
 	// https://lemire.me/blog/2019/06/06/nearly-divisionless-random-integer-generation-on-various-systems/ and
