@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func uniformUint32_simple(src Source, n uint32) uint32 {
+func uniformUint32Simple(src Source, n uint32) uint32 {
 	thresh := uint32(-n) % uint32(n)
 	for {
 		v := src.Uint32()
@@ -29,7 +29,7 @@ func TestUintformUint32MatchesSimple(t *testing.T) {
 	var src1, src2 descendingSource
 	var n uint32 = 0xffffffff
 	for i := 0; i < 1000; i++ {
-		expected := uniformUint32_simple(&src1, n)
+		expected := uniformUint32Simple(&src1, n)
 		actual := UniformUint32(&src2, n)
 		if expected != actual {
 			t.Fatalf("(i = %d) expected %d, got %d", i, expected, actual)
