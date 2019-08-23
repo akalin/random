@@ -67,7 +67,7 @@ func assertLessEqualUint32(t *testing.T, a, b uint32) {
 	}
 }
 
-// TestComputeRangeN tests that the values returned by computeRange partition the entire 32-bit range,
+// testComputeRangeN tests that the values returned by computeRange partition the entire 32-bit range,
 // and that the valid ranges for each i have the same number of values.
 func testComputeRangeN(t *testing.T, n uint32) {
 	// From https://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
