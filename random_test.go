@@ -102,9 +102,9 @@ func testComputeRangeN(t *testing.T, n uint32) {
 	}
 }
 
-func TestComputeRange(t *testing.T) {
+func getTestNs(maxPower uint) []uint32 {
 	var ns []uint32
-	for i := uint(0); i < 15; i++ {
+	for i := uint(0); i < maxPower; i++ {
 		n := uint32(1) << i
 		if n >= 4 {
 			ns = append(ns, n-1)
@@ -114,7 +114,12 @@ func TestComputeRange(t *testing.T) {
 			ns = append(ns, n+1)
 		}
 	}
-	for _, n := range ns {
+	return ns
+}
+
+func TestComputeRange(t *testing.T) {
+	t.Parallel()
+	for _, n := range getTestNs(15) {
 		t.Run(fmt.Sprintf("n=%d", n), func(t *testing.T) {
 			t.Parallel()
 			testComputeRangeN(t, n)
@@ -179,18 +184,8 @@ func testUniformUint32Range(t *testing.T, n uint32) {
 }
 
 func TestUniformUint32Range(t *testing.T) {
-	var ns []uint32
-	for i := uint(0); i < 8; i++ {
-		n := uint32(1) << i
-		if n >= 4 {
-			ns = append(ns, n-1)
-		}
-		ns = append(ns, n)
-		if n >= 4 {
-			ns = append(ns, n+1)
-		}
-	}
-	for _, n := range ns {
+	t.Parallel()
+	for _, n := range getTestNs(8) {
 		t.Run(fmt.Sprintf("n=%d", n), func(t *testing.T) {
 			t.Parallel()
 			testUniformUint32Range(t, n)
