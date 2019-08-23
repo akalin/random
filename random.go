@@ -1,11 +1,11 @@
 package random
 
-// TODO: Add comment.
+// A Source represents a source of uniformly-distributed pseudo-random uint32 values in the range 0 to 2³²-1 (inclusive).
 type Source interface {
 	Uint32() uint32
 }
 
-// TODO: Add comment.
+// UniformUint32 returns a uniformly-distributed number in the range 0 to n-1 (inclusive).
 func UniformUint32(src Source, n uint32) uint32 {
 	// Blurb and links about Lemire's algorithm. Mention that the
 	// complexity is to avoid divisions, which include modulo operations.
