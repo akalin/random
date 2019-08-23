@@ -7,9 +7,10 @@ type Source interface {
 
 // UniformUint32 returns a uniformly-distributed number in the range 0 to n-1 (inclusive).
 func UniformUint32(src Source, n uint32) uint32 {
-	// Blurb and links about Lemire's algorithm. Mention that the
-	// complexity is to avoid divisions, which include modulo operations.
-	//
+	// The algorithm below is taken from Lemire's "Fast Random Integer Generation in an Interval", available at
+	// https://arxiv.org/abs/1805.10941 . See also
+	// https://lemire.me/blog/2019/06/06/nearly-divisionless-random-integer-generation-on-various-systems/ and
+	// http://www.pcg-random.org/posts/bounded-rands.html for more details beyond the following explanation.
 	//
 	// To understand the algorithm below, let's pretend we're working with 3-bit and 6-bit integers
 	// instead of 32-bit and 64-bit integers, so instead of src.Uint32() we have src.Uint3(), which returns
