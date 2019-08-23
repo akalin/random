@@ -23,6 +23,8 @@ import (
 //   2) that the valid ranges returned by computeRange(i, n) have the same size for 0 ≤ i < n;
 //   3) that UniformUint32() returns i when in the valid range returned by computeRange(i, n), and rejects the value
 //      otherwise.
+//
+// TODO: Characterize range by three numbers, range size, threshold of X.
 
 // computeRange, given n > 0 and i < n, returns three uint32s
 //
