@@ -5,7 +5,24 @@ import (
 	"testing"
 )
 
-// TODO: Write note about overall testing strategy.
+// How can we test UniformUint32? Fortunately, it's not too difficult -- since the randomness is encapsulated
+// in src.Uint32(), we just have to make sure that as the return value of src.Uint32() spans the entire range
+// from 0 to 0xffffffff, that UniformUint32(src, n) returns an equal number of values for 0, 1, …, n-1 when
+// it doesn't reject the value of src.Uint32().
+//
+// Roughly, the return value of src.Uint32() vs. the return value of UniformUint32() (for n not a power of 2) looks like:
+//
+//    src.Uint32(): 0 1 2 3 …           …         …                     … fffffffe ffffffff
+// UniformUint32(): X 0 0 0 … 0 X 1 1 1 … 1 X 2 2 … n-2 n-2 n-2 n-1 n-1 …      n-1      n-1
+//
+// where X means the value for src.Uint32() is rejected. The exact calculation is done by computeRange() below.
+//
+// Therefore, to test uniformity, we can test:
+//
+//   1) that the return values of computeRange(i, n) for 0 ≤ i < n partition the entire range from 0 to 0xffffffff;
+//   2) that the valid ranges returned by computeRange(i, n) have the same size for 0 ≤ i < n;
+//   3) that UniformUint32() returns i when in the valid range returned by computeRange(i, n), and rejects the value
+//      otherwise.
 
 // computeRange, given n > 0 and i < n, returns three uint32s
 //
@@ -15,6 +32,10 @@ import (
 //
 //   - if firstV ≤ src.Uint32() < firstValidV, UniformUint32() rejects the sample, and
 //   - if firstValidV ≤ src.Uint32() ≤ firstValidV, UniformUint32() returns i.
+//
+// TODO: Verify that firstValidV - firstV is at most 1.
+//
+// TODO: Refer to test below.
 func computeRange(i, n uint32) (firstV uint32, firstValidV uint32, lastValidV uint32) {
 	if n == 0 {
 		panic("n must be non-zero")
