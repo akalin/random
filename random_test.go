@@ -5,6 +5,25 @@ import (
 	"testing"
 )
 
+// computeRange, given n > 0 and i < n, returns three uint32s
+//
+//   firstV ≤ firstValidV ≤ lastValidV
+//
+// such that:
+//
+//   - if firstV ≤ src.Uint32() < firstValidV, UniformUint32() rejects the sample, and
+//   - if firstValidV ≤ src.Uint32() ≤ firstValidV, UniformUint32() returns i.
+func computeRange(i, n uint32) (firstV uint32, firstValidV uint32, lastValidV uint32) {
+	thresh := -n % n
+	firstProd := uint64(i) << 32
+	firstValidProd := firstProd + uint64(thresh)
+	lastValidProd := uint64(i+1)<<32 - 1
+	firstV = uint32((firstProd + uint64(n-1)) / uint64(n))
+	firstValidV = uint32((firstValidProd + uint64(n-1)) / uint64(n))
+	lastValidV = uint32(lastValidProd / uint64(n))
+	return firstV, firstValidV, lastValidV
+}
+
 type singleSource struct {
 	i         uint32
 	callCount uint32
@@ -22,17 +41,6 @@ func (src *singleSource) Uint32() uint32 {
 	}
 
 	panic("called when callCount > 1")
-}
-
-func computeRange(i, n uint32) (uint32, uint32, uint32) {
-	thresh := -n % n
-	firstProd := uint64(i) << 32
-	firstValidProd := uint64(i)<<32 + uint64(thresh)
-	lastValidProd := uint64(i+1)<<32 - 1
-	firstV := uint32((firstProd + uint64(n-1)) / uint64(n))
-	firstValidV := uint32((firstValidProd + uint64(n-1)) / uint64(n))
-	lastValidV := uint32(lastValidProd / uint64(n))
-	return firstV, firstValidV, lastValidV
 }
 
 func expectUniformUint32Returns(t *testing.T, n, v, expected uint32) {
