@@ -18,6 +18,33 @@ func (src *singleSource) Uint32() uint32 {
 	return src.i
 }
 
+func computeRange(i, n uint32) (uint32, uint32) {
+	thresh := uint32(-n) % uint32(n)
+	firstProd := uint64(i)<<32 + uint64(thresh)
+	lastProd := uint64(i+1)<<32 - 1
+	firstV := uint32((firstProd + uint64(n) - 1) / uint64(n))
+	lastV := uint32(lastProd / uint64(n))
+	return firstV, lastV
+}
+
+func expectUniformUint32(t *testing.T, n, v, expected uint32) {
+	t.Helper()
+	src := singleSource{i: v}
+	actual := UniformUint32(&src, n)
+	if actual != expected {
+		t.Errorf("(v=%d) expected %d, got %d", v, expected, actual)
+	}
+}
+
+func TestUniformUint32Range(t *testing.T) {
+	var n uint32 = 5
+	for i := uint32(0); i < n; i++ {
+		firstV, lastV := computeRange(i, n)
+		expectUniformUint32(t, n, firstV, i)
+		expectUniformUint32(t, n, lastV, i)
+	}
+}
+
 func TestUniformUint32IsUniform(t *testing.T) {
 	t.Skip()
 
