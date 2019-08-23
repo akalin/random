@@ -158,8 +158,7 @@ func expectUniformUint32Rejects(t *testing.T, n, v uint32) {
 	}
 }
 
-func TestUniformUint32Range(t *testing.T) {
-	var n uint32 = 5
+func testUniformUint32Range(t *testing.T, n uint32) {
 	for i := uint32(0); i < n; i++ {
 		firstV, firstValidV, lastValidV := computeRange(i, n)
 
@@ -175,6 +174,25 @@ func TestUniformUint32Range(t *testing.T) {
 			expectUniformUint32Returns(t, n, uint32(j), i)
 		}
 		expectUniformUint32Returns(t, n, lastValidV, i)
+	}
+}
+
+func TestUniformUint32Range(t *testing.T) {
+	var ns []uint32
+	for i := uint(0); i < 8; i++ {
+		n := uint32(1) << i
+		if n >= 4 {
+			ns = append(ns, n-1)
+		}
+		ns = append(ns, n)
+		if n >= 4 {
+			ns = append(ns, n+1)
+		}
+	}
+	for _, n := range ns {
+		t.Run(fmt.Sprintf("n=%d", n), func(t *testing.T) {
+			testUniformUint32Range(t, n)
+		})
 	}
 }
 
