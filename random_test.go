@@ -5,6 +5,8 @@ import (
 	"testing"
 )
 
+// TODO: Write note about overall testing strategy.
+
 // computeRange, given n > 0 and i < n, returns three uint32s
 //
 //   firstV ≤ firstValidV ≤ lastValidV
@@ -14,6 +16,12 @@ import (
 //   - if firstV ≤ src.Uint32() < firstValidV, UniformUint32() rejects the sample, and
 //   - if firstValidV ≤ src.Uint32() ≤ firstValidV, UniformUint32() returns i.
 func computeRange(i, n uint32) (firstV uint32, firstValidV uint32, lastValidV uint32) {
+	if n == 0 {
+		panic("n must be non-zero")
+	}
+	if i >= n {
+		panic("i must be < n")
+	}
 	thresh := -n % n
 	firstProd := uint64(i) << 32
 	firstValidProd := firstProd + uint64(thresh)
@@ -22,6 +30,53 @@ func computeRange(i, n uint32) (firstV uint32, firstValidV uint32, lastValidV ui
 	firstValidV = uint32((firstValidProd + uint64(n-1)) / uint64(n))
 	lastValidV = uint32(lastValidProd / uint64(n))
 	return firstV, firstValidV, lastValidV
+}
+
+func assertEqualUint32(t *testing.T, expected, actual uint32) {
+	t.Helper()
+	if expected != actual {
+		t.Fatalf("expected %d, got %d", expected, actual)
+	}
+}
+
+func assertLessEqualUint32(t *testing.T, a, b uint32) {
+	t.Helper()
+	if a > b {
+		t.Fatalf("expected %d ≤ %d", a, b)
+	}
+}
+
+// TestComputeRange tests that the values returned by computeRange partition the entire 32-bit range,
+// and that the valid ranges for each i have the same number of values.
+func TestComputeRange(t *testing.T) {
+	var n uint32 = 5
+	// From https://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
+	nIsPowerOfTwo := n&(n-1) == 0
+	var prevLastValidV uint32
+	var validRange uint32
+	for i := uint32(0); i < n; i++ {
+		firstV, firstValidV, lastValidV := computeRange(i, n)
+		if nIsPowerOfTwo {
+			assertEqualUint32(t, firstV, firstValidV)
+		} else {
+			assertLessEqualUint32(t, firstV, firstValidV)
+		}
+		assertLessEqualUint32(t, firstValidV, lastValidV)
+
+		if i == 0 {
+			assertEqualUint32(t, 0, firstV)
+
+		} else {
+			assertEqualUint32(t, prevLastValidV+1, firstV)
+			assertEqualUint32(t, validRange, lastValidV-firstValidV+1)
+		}
+
+		if i == n-1 {
+			assertEqualUint32(t, 0xffffffff, lastValidV)
+		}
+		prevLastValidV = lastValidV
+		validRange = lastValidV - firstValidV + 1
+	}
 }
 
 type singleSource struct {
@@ -63,22 +118,8 @@ func expectUniformUint32Rejects(t *testing.T, n, v uint32) {
 
 func TestUniformUint32Range(t *testing.T) {
 	var n uint32 = 5
-	var prevLastValidV uint32
 	for i := uint32(0); i < n; i++ {
 		firstV, firstValidV, lastValidV := computeRange(i, n)
-		if i == 0 {
-			if firstV != 0 {
-				t.Errorf("(i=0) expected firstV=0, got %d", firstV)
-			}
-		} else if prevLastValidV+1 != firstV {
-			t.Errorf("(i=%d) expected firstV=%d to follow prevLastValidV=%d", i, firstV, prevLastValidV)
-		}
-
-		if i == n-1 {
-			if lastValidV != 0xffffffff {
-				t.Errorf("(i=%d) expected lastValidV=0xffffffff, got %d", i, lastValidV)
-			}
-		}
 
 		for i := firstV; i < firstValidV; i++ {
 			expectUniformUint32Rejects(t, n, i)
@@ -92,7 +133,6 @@ func TestUniformUint32Range(t *testing.T) {
 			expectUniformUint32Returns(t, n, uint32(j), i)
 		}
 		expectUniformUint32Returns(t, n, lastValidV, i)
-		prevLastValidV = lastValidV
 	}
 }
 
