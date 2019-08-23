@@ -80,7 +80,10 @@ func TestComputeRange(t *testing.T) {
 		if nIsPowerOfTwo {
 			assertEqualUint32(t, firstV, firstValidV)
 		} else {
-			assertLessEqualUint32(t, firstV, firstValidV)
+			// TODO: Figure out the threshold where the delta goes from 1 to 0.
+			if firstV != firstValidV {
+				assertLessEqualUint32(t, firstV+1, firstValidV)
+			}
 		}
 		assertLessEqualUint32(t, firstValidV, lastValidV)
 
