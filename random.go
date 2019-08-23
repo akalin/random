@@ -125,12 +125,12 @@ func UniformUint32(src Source, n uint32) uint32 {
 	// Here we want to calculate 2³² % n, but 2³² doesn't fit in a 32-bit integer. Adding or subtracting n
 	// doesn't change the result of the remainder operation, so:
 	//
-	//   2³² % n = (2³² - n) % n.
+	//   2³² % n == (2³² - n) % n.
 	//
-	// But uint32(-n) == 2³² - n, so
+	// But for uint32s, -n == 2³² - n, so
 	//
-	//   2³² % n = uint32(-n) % n.
-	thresh := uint32(-n) % uint32(n)
+	//   2³² % n == -n % n.
+	thresh := -n % n
 	if low >= thresh {
 		return uint32(prod >> 32)
 	}
