@@ -103,7 +103,17 @@ func testComputeRangeN(t *testing.T, n uint32) {
 }
 
 func TestComputeRange(t *testing.T) {
-	ns := []uint32{5, 6}
+	var ns []uint32
+	for i := uint(0); i < 15; i++ {
+		n := uint32(1) << i
+		if n >= 4 {
+			ns = append(ns, n-1)
+		}
+		ns = append(ns, n)
+		if n >= 4 {
+			ns = append(ns, n+1)
+		}
+	}
 	for _, n := range ns {
 		t.Run(fmt.Sprintf("n=%d", n), func(t *testing.T) {
 			testComputeRangeN(t, n)
