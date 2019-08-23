@@ -116,6 +116,7 @@ func TestComputeRange(t *testing.T) {
 	}
 	for _, n := range ns {
 		t.Run(fmt.Sprintf("n=%d", n), func(t *testing.T) {
+			t.Parallel()
 			testComputeRangeN(t, n)
 		})
 	}
@@ -191,6 +192,7 @@ func TestUniformUint32Range(t *testing.T) {
 	}
 	for _, n := range ns {
 		t.Run(fmt.Sprintf("n=%d", n), func(t *testing.T) {
+			t.Parallel()
 			testUniformUint32Range(t, n)
 		})
 	}
