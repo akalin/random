@@ -77,7 +77,7 @@ func (src *singleSource) Uint32() uint32 {
 // uniformUint() returns the values 0 to n-1 an equal number of times, filtering out
 // the case where the first value is rejected.
 func testUniformUint(t *testing.T, n, numBits uint32) {
-	buckets := make([]int, n)
+	buckets := make([]uint32, n)
 	for v := uint32(0); v < (1 << numBits); v++ {
 		src := singleSource{v: v}
 		u := uniformUint(&src, n, numBits)
@@ -86,11 +86,10 @@ func testUniformUint(t *testing.T, n, numBits uint32) {
 			continue
 		}
 		require.Equal(t, uint32(1), src.callCount)
-		require.GreaterOrEqual(t, u, 0)
 		require.Less(t, u, n)
 		buckets[u]++
 	}
-	expectedCount := int((1 << numBits) / n)
+	expectedCount := (1 << numBits) / n
 	for i := uint32(0); i < n; i++ {
 		require.Equal(t, expectedCount, buckets[i], "i=%d", i)
 	}
@@ -104,11 +103,61 @@ func testUniformUint(t *testing.T, n, numBits uint32) {
 func TestUniformUint(t *testing.T) {
 	t.Parallel()
 	for numBits := uint32(1); numBits < 10; numBits++ {
+		numBits := numBits // capture range variable.
 		t.Run(fmt.Sprintf("numBits=%d", numBits), func(t *testing.T) {
 			t.Parallel()
 			for n := uint32(1); n < 1<<numBits; n++ {
 				testUniformUint(t, n, numBits)
 			}
+		})
+	}
+}
+
+func testUniformUint32(t *testing.T, n uint32) {
+	two32 := uint64(1) << 32
+	count := two32 / uint64(n)
+	// vStart will eventually reach two32, so it has to be a uint64.
+	vStart := uint64(0)
+	for i := uint32(0); i < n; i++ {
+		// Test vStart.
+		src := singleSource{v: uint32(vStart)}
+		u := UniformUint32(&src, n)
+		if src.callCount == 2 {
+			// v was rejected, so we're in a big group.
+			vStart++
+			src = singleSource{v: uint32(vStart)}
+			u = UniformUint32(&src, n)
+		}
+		require.Equal(t, uint32(1), src.callCount)
+		require.Equal(t, i, u)
+
+		vEnd := vStart + uint64(count)
+
+		// Test last v.
+		src = singleSource{v: uint32(vEnd - 1)}
+		u = UniformUint32(&src, n)
+		require.Equal(t, uint32(1), src.callCount)
+		require.Equal(t, i, u)
+
+		// Test a middle v.
+		src = singleSource{v: uint32(vStart) + uint32(count/2)}
+		u = UniformUint32(&src, n)
+		require.Equal(t, uint32(1), src.callCount)
+		require.Equal(t, i, u)
+
+		vStart = vEnd
+	}
+
+	require.Equal(t, vStart, two32)
+}
+
+func TestUniformUint32(t *testing.T) {
+	t.Parallel()
+	for n := uint32(1); n < 1000; n++ {
+		n := n // capture range variable.
+		t.Run(fmt.Sprintf("n=%d", n), func(t *testing.T) {
+			t.Parallel()
+			testUniformUint32(t, n)
 		})
 	}
 }
@@ -183,7 +232,7 @@ func testComputeRangeN(t *testing.T, n uint32) {
 		require.LessOrEqual(t, firstValidV, lastValidV)
 
 		if i == 0 {
-			require.Equal(t, 0, firstV)
+			require.Equal(t, uint32(0), firstV)
 
 		} else {
 			require.Equal(t, prevLastValidV+1, firstV)
@@ -191,7 +240,7 @@ func testComputeRangeN(t *testing.T, n uint32) {
 		}
 
 		if i == n-1 {
-			require.Equal(t, 0xffffffff, lastValidV)
+			require.Equal(t, uint32(0xffffffff), lastValidV)
 		}
 		prevLastValidV = lastValidV
 		validRange = lastValidV - firstValidV + 1
@@ -216,6 +265,7 @@ func getTestNs(maxPower uint) []uint32 {
 func TestComputeRange(t *testing.T) {
 	t.Parallel()
 	for _, n := range getTestNs(15) {
+		n := n // capture range variable.
 		t.Run(fmt.Sprintf("n=%d", n), func(t *testing.T) {
 			t.Parallel()
 			testComputeRangeN(t, n)
@@ -263,6 +313,7 @@ func testUniformUint32Range(t *testing.T, n uint32) {
 func TestUniformUint32Range(t *testing.T) {
 	t.Parallel()
 	for _, n := range getTestNs(8) {
+		n := n // capture range variable.
 		t.Run(fmt.Sprintf("n=%d", n), func(t *testing.T) {
 			t.Parallel()
 			testUniformUint32Range(t, n)
