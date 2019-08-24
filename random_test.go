@@ -5,6 +5,74 @@ import (
 	"testing"
 )
 
+func uniformUint(src Source, n, numBits uint32) uint32 {
+	if n == 0 {
+		panic("n must be non-zero in call to UniformUint32")
+	}
+
+	if n >= 1<<numBits {
+		panic("n must fit in numBits bits")
+	}
+
+	if numBits >= 32 {
+		panic("numBits must be less than 32")
+	}
+
+	// Mask off all but the lower numBits bits of v.
+	mask := uint32(1)<<numBits - 1
+	v := src.Uint32() & mask
+	prod := uint64(v) * uint64(n)
+	low := uint32(prod) & mask
+	if low >= n {
+		return uint32(prod >> numBits)
+	}
+
+	threshold := (1 << numBits) % n
+	if low >= threshold {
+		return uint32(prod >> numBits)
+	}
+
+	for {
+		v = src.Uint32() & mask
+		prod = uint64(v) * uint64(n)
+		low := uint32(prod) & mask
+		if low >= threshold {
+			return uint32(prod >> numBits)
+		}
+	}
+}
+
+func testUniformUint(t *testing.T, n, numBits uint32) {
+	buckets := make([]int, n)
+	threshold := (1 << numBits) % n
+	for i := uint32(0); i < (1 << numBits); i++ {
+		if (uint32(uint64(i)*uint64(n)) & (uint32(1)<<numBits - 1)) < threshold {
+			continue
+		}
+		src := singleSource{i: uint32(i)}
+		actual := uniformUint(&src, n, numBits)
+		buckets[actual]++
+	}
+	expectedCount := buckets[0]
+	for i := uint32(1); i < n; i++ {
+		if buckets[i] != expectedCount {
+			t.Errorf("(i = %d) expected %d, got %d", i, expectedCount, buckets[i])
+		}
+	}
+}
+
+func TestUniformUint(t *testing.T) {
+	t.Parallel()
+	for numBits := uint32(1); numBits < 12; numBits++ {
+		t.Run(fmt.Sprintf("numBits=%d", numBits), func(t *testing.T) {
+			t.Parallel()
+			for n := uint32(1); n < 1<<numBits; n++ {
+				testUniformUint(t, n, numBits)
+			}
+		})
+	}
+}
+
 // How can we test UniformUint32? Fortunately, it's not too difficult -- since the randomness is encapsulated
 // in src.Uint32(), we just have to make sure that as the return value of src.Uint32() spans the entire range
 // from 0 to 0xffffffff, that UniformUint32(src, n) returns an equal number of values for 0, 1, …, n-1 when
