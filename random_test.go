@@ -113,12 +113,12 @@ func TestUniformUint(t *testing.T) {
 	}
 }
 
-func testUniformUint32(t *testing.T, n uint32) {
+func testUniformUint32(t *testing.T, n, delta uint32) {
 	two32 := uint64(1) << 32
 	// count and vEnd can be two32, so they both have to be uint64.
 	count := two32 / uint64(n)
 	var vEnd uint64
-	for i := uint32(0); i < n; i++ {
+	for i := uint32(0); i < n; {
 		// Set vStart to ceil((i*2³²) / n) and vEnd to ceil(((i+1)*2³²) / n).
 		//
 		// TODO: Explain why.
@@ -154,12 +154,20 @@ func testUniformUint32(t *testing.T, n uint32) {
 		u = UniformUint32(&src, n)
 		require.Equal(t, uint32(1), src.callCount)
 		require.Equal(t, i, u)
+
+		if i == n-1 {
+			break
+		} else if (n - i) <= delta {
+			i = n - 1
+		} else {
+			i += delta
+		}
 	}
 
 	require.Equal(t, vEnd, two32)
 }
 
-func TestUniformUint32(t *testing.T) {
+func TestUniformUint32Small(t *testing.T) {
 	t.Parallel()
 	var ns []uint32
 	for i := uint32(0); i < 15; i++ {
@@ -173,7 +181,25 @@ func TestUniformUint32(t *testing.T) {
 		}
 	}
 	for _, n := range ns {
-		testUniformUint32(t, n)
+		testUniformUint32(t, n, 1)
+	}
+}
+
+func TestUniformUint32Medium(t *testing.T) {
+	t.Parallel()
+	var ns []uint32
+	for i := uint32(15); i < 32; i++ {
+		n := uint32(1) << i
+		if i >= 2 {
+			ns = append(ns, n-1)
+		}
+		ns = append(ns, n)
+		if i >= 2 {
+			ns = append(ns, n+1)
+		}
+	}
+	for _, n := range ns {
+		testUniformUint32(t, n, n/1000)
 	}
 }
 
