@@ -154,11 +154,7 @@ func testUniformUint32(t *testing.T, n uint32) {
 func TestUniformUint32(t *testing.T) {
 	t.Parallel()
 	for n := uint32(1); n < 1000; n++ {
-		n := n // capture range variable.
-		t.Run(fmt.Sprintf("n=%d", n), func(t *testing.T) {
-			t.Parallel()
-			testUniformUint32(t, n)
-		})
+		testUniformUint32(t, n)
 	}
 }
 
