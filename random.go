@@ -151,7 +151,7 @@ func UniformUint32(src Source, n uint32) uint32 {
 	v := src.Uint32()
 	prod := uint64(v) * uint64(n)
 	low := uint32(prod)
-	// Then we know that threshold < n, so if low >= n, then we already know that low >= threshold without having
+	// Then we know that threshold < n, so if low ≥ n, then we already know that low ≥ threshold without having
 	// to explicitly calculate threshold, possibly removing the last expensive operation.
 	if low >= n {
 		return uint32(prod >> 32)
