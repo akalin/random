@@ -3,6 +3,8 @@ package random
 import (
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func uniformUint(src Source, n, numBits uint32) uint32 {
@@ -42,13 +44,6 @@ func uniformUint(src Source, n, numBits uint32) uint32 {
 	}
 }
 
-func assertEqualInt(t *testing.T, expected, actual int, s string) {
-	t.Helper()
-	if expected != actual {
-		t.Fatalf("expected %d, got %d: %s", expected, actual, s)
-	}
-}
-
 type singleSource struct {
 	v         uint32
 	callCount uint32
@@ -76,12 +71,12 @@ func testUniformUint(t *testing.T, n, numBits uint32) {
 		if src.callCount == 2 {
 			continue
 		}
-		assertEqualInt(t, 1, int(src.callCount), "")
+		require.Equal(t, uint32(1), src.callCount)
 		buckets[actual]++
 	}
 	expectedCount := int((1 << numBits) / n)
 	for i := uint32(0); i < n; i++ {
-		assertEqualInt(t, expectedCount, buckets[i], fmt.Sprintf("i=%d", i))
+		require.Equal(t, expectedCount, buckets[i], "i=%d", i)
 	}
 }
 
@@ -147,20 +142,6 @@ func computeRange(i, n uint32) (firstV uint32, firstValidV uint32, lastValidV ui
 	return firstV, firstValidV, lastValidV
 }
 
-func assertEqualUint32(t *testing.T, expected, actual uint32) {
-	t.Helper()
-	if expected != actual {
-		t.Fatalf("expected %d, got %d", expected, actual)
-	}
-}
-
-func assertLessEqualUint32(t *testing.T, a, b uint32) {
-	t.Helper()
-	if a > b {
-		t.Fatalf("expected %d ≤ %d", a, b)
-	}
-}
-
 // testComputeRangeN tests that the values returned by computeRange partition the entire 32-bit range,
 // and that the valid ranges for each i have the same number of values.
 func testComputeRangeN(t *testing.T, n uint32) {
@@ -171,25 +152,25 @@ func testComputeRangeN(t *testing.T, n uint32) {
 	for i := uint32(0); i < n; i++ {
 		firstV, firstValidV, lastValidV := computeRange(i, n)
 		if nIsPowerOfTwo {
-			assertEqualUint32(t, firstV, firstValidV)
+			require.Equal(t, firstV, firstValidV)
 		} else {
 			// TODO: Figure out the threshold where the delta goes from 1 to 0.
 			if firstV != firstValidV {
-				assertLessEqualUint32(t, firstV+1, firstValidV)
+				require.LessOrEqual(t, firstV+1, firstValidV)
 			}
 		}
-		assertLessEqualUint32(t, firstValidV, lastValidV)
+		require.LessOrEqual(t, firstValidV, lastValidV)
 
 		if i == 0 {
-			assertEqualUint32(t, 0, firstV)
+			require.Equal(t, 0, firstV)
 
 		} else {
-			assertEqualUint32(t, prevLastValidV+1, firstV)
-			assertEqualUint32(t, validRange, lastValidV-firstValidV+1)
+			require.Equal(t, prevLastValidV+1, firstV)
+			require.Equal(t, validRange, lastValidV-firstValidV+1)
 		}
 
 		if i == n-1 {
-			assertEqualUint32(t, 0xffffffff, lastValidV)
+			require.Equal(t, 0xffffffff, lastValidV)
 		}
 		prevLastValidV = lastValidV
 		validRange = lastValidV - firstValidV + 1
