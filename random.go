@@ -16,7 +16,7 @@ Lemire's algorithm avoids expensive divisions and remainder operations as much a
 The intuition is to start with this:
 
   RandomFraction(src Source, n uint32) {
-    return src.Uint32()*(n/2³²)
+    return src.Uint32() * (n/2³²)
   }
 
 which, if all calculations were done exactly, would return a number at least 0 and less than n. The problem is that
