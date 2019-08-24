@@ -203,4 +203,15 @@ func TestUniformUint32Medium(t *testing.T) {
 	}
 }
 
+func TestUniformUint32Large(t *testing.T) {
+	t.Parallel()
+	var ns []uint32
+	for i := uint32(0); i < 100; i++ {
+		ns = append(ns, 0xffffffff-i)
+	}
+	for _, n := range ns {
+		testUniformUint32(t, n, n/1000)
+	}
+}
+
 // TODO: Benchmarks.
