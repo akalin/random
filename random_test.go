@@ -115,8 +115,8 @@ func TestUniformUint(t *testing.T) {
 
 func testUniformUint32(t *testing.T, n uint32) {
 	two32 := uint64(1) << 32
+	// count and vStart can be two32, so they both have to be uint64.
 	count := two32 / uint64(n)
-	// vStart will eventually reach two32, so it has to be a uint64.
 	vStart := uint64(0)
 	for i := uint32(0); i < n; i++ {
 		// Test vStart.
