@@ -115,10 +115,18 @@ func TestUniformUint(t *testing.T) {
 
 func testUniformUint32(t *testing.T, n uint32) {
 	two32 := uint64(1) << 32
-	// count and vStart can be two32, so they both have to be uint64.
+	// count and vEnd can be two32, so they both have to be uint64.
 	count := two32 / uint64(n)
-	vStart := uint64(0)
+	var vEnd uint64
 	for i := uint32(0); i < n; i++ {
+		// Set vStart to ceil((i*2³²) / n) and vEnd to ceil(((i+1)*2³²) / n).
+		//
+		// TODO: Explain why.
+		//
+		// Recall that ceil(a / b) can be calculated as floor(a + (b - 1) / b).
+		vStart := uint32((uint64(i)*two32 + uint64(n-1)) / uint64(n))
+		vEnd = ((uint64(i)+1)*two32 + uint64(n-1)) / uint64(n)
+
 		// Test vStart.
 		src := singleSource{v: uint32(vStart)}
 		u := UniformUint32(&src, n)
@@ -131,7 +139,9 @@ func testUniformUint32(t *testing.T, n uint32) {
 		require.Equal(t, uint32(1), src.callCount)
 		require.Equal(t, i, u)
 
-		vEnd := vStart + uint64(count)
+		// Test interval size.
+		require.Less(t, uint64(vStart), vEnd)
+		require.Equal(t, count, vEnd-uint64(vStart))
 
 		// Test last v.
 		src = singleSource{v: uint32(vEnd - 1)}
@@ -144,11 +154,9 @@ func testUniformUint32(t *testing.T, n uint32) {
 		u = UniformUint32(&src, n)
 		require.Equal(t, uint32(1), src.callCount)
 		require.Equal(t, i, u)
-
-		vStart = vEnd
 	}
 
-	require.Equal(t, vStart, two32)
+	require.Equal(t, vEnd, two32)
 }
 
 func TestUniformUint32(t *testing.T) {
