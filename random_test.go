@@ -123,7 +123,7 @@ func testUniformUint32(t *testing.T, n uint32) {
 		src := singleSource{v: uint32(vStart)}
 		u := UniformUint32(&src, n)
 		if src.callCount == 2 {
-			// v was rejected, so vStart must be one higher.
+			// vStart was rejected, so the actual vStart must be one higher.
 			vStart++
 			src = singleSource{v: uint32(vStart)}
 			u = UniformUint32(&src, n)
