@@ -255,3 +255,5 @@ func TestUniformUint32MatchesSimple(t *testing.T) {
 		}
 	}
 }
+
+// TODO: Benchmarks.
