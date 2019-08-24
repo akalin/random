@@ -42,28 +42,52 @@ func uniformUint(src Source, n, numBits uint32) uint32 {
 	}
 }
 
+func assertEqualInt(t *testing.T, expected, actual int, s string) {
+	t.Helper()
+	if expected != actual {
+		t.Fatalf("expected %d, got %d: %s", expected, actual, s)
+	}
+}
+
+type singleSource struct {
+	v         uint32
+	callCount uint32
+}
+
+func (src *singleSource) Uint32() uint32 {
+	if src.callCount == 0 {
+		src.callCount++
+		return src.v
+	}
+
+	if src.callCount == 1 {
+		src.callCount++
+		return 0xffffffff
+	}
+
+	panic("called when callCount > 1")
+}
+
 func testUniformUint(t *testing.T, n, numBits uint32) {
 	buckets := make([]int, n)
-	threshold := (1 << numBits) % n
-	for i := uint32(0); i < (1 << numBits); i++ {
-		if (uint32(uint64(i)*uint64(n)) & (uint32(1)<<numBits - 1)) < threshold {
+	for v := uint32(0); v < (1 << numBits); v++ {
+		src := singleSource{v: v}
+		actual := uniformUint(&src, n, numBits)
+		if src.callCount == 2 {
 			continue
 		}
-		src := singleSource{i: uint32(i)}
-		actual := uniformUint(&src, n, numBits)
+		assertEqualInt(t, 1, int(src.callCount), "")
 		buckets[actual]++
 	}
-	expectedCount := buckets[0]
-	for i := uint32(1); i < n; i++ {
-		if buckets[i] != expectedCount {
-			t.Errorf("(i = %d) expected %d, got %d", i, expectedCount, buckets[i])
-		}
+	expectedCount := int((1 << numBits) / n)
+	for i := uint32(0); i < n; i++ {
+		assertEqualInt(t, expectedCount, buckets[i], fmt.Sprintf("i=%d", i))
 	}
 }
 
 func TestUniformUint(t *testing.T) {
 	t.Parallel()
-	for numBits := uint32(1); numBits < 12; numBits++ {
+	for numBits := uint32(1); numBits < 10; numBits++ {
 		t.Run(fmt.Sprintf("numBits=%d", numBits), func(t *testing.T) {
 			t.Parallel()
 			for n := uint32(1); n < 1<<numBits; n++ {
@@ -197,28 +221,9 @@ func TestComputeRange(t *testing.T) {
 	}
 }
 
-type singleSource struct {
-	i         uint32
-	callCount uint32
-}
-
-func (src *singleSource) Uint32() uint32 {
-	if src.callCount == 0 {
-		src.callCount++
-		return src.i
-	}
-
-	if src.callCount == 1 {
-		src.callCount++
-		return 0xffffffff
-	}
-
-	panic("called when callCount > 1")
-}
-
 func expectUniformUint32Returns(t *testing.T, n, v, expected uint32) {
 	t.Helper()
-	src := singleSource{i: v}
+	src := singleSource{v: v}
 	actual := UniformUint32(&src, n)
 	if actual != expected {
 		t.Errorf("(v=%d) expected %d, got %d", v, expected, actual)
@@ -227,7 +232,7 @@ func expectUniformUint32Returns(t *testing.T, n, v, expected uint32) {
 
 func expectUniformUint32Rejects(t *testing.T, n, v uint32) {
 	t.Helper()
-	src := singleSource{i: v}
+	src := singleSource{v: v}
 	actual := UniformUint32(&src, n)
 	if src.callCount != 2 {
 		t.Errorf("(v=%d) expected %d, got %d (actual=%d)", v, 2, src.callCount, actual)
@@ -276,7 +281,7 @@ func TestUniformUint32IsUniform(t *testing.T) {
 		if uint32(i*uint64(n)) < thresh {
 			continue
 		}
-		src := singleSource{i: uint32(i)}
+		src := singleSource{v: uint32(i)}
 		actual := UniformUint32(&src, n)
 		buckets[actual]++
 	}
