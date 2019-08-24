@@ -94,6 +94,7 @@ Therefore, the threshold value is
 
 That is, if we filter out values of v where low < 2³ % n, then we remove a single entry from each big group,
 turning into a small group. Then all groups would have the same size, and we'd have a uniform distribution.
+(This is Lemma 4.1, the main result from Lemire's paper.)
 
 What happens if n divides 2³ exactly? Then the threshold would be 2³ % n == 0, and we wouldn't filter out
 any values of v, as we would expect.
