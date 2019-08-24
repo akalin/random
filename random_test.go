@@ -7,6 +7,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// uniformUint returns a uniformly-distributed number in the range 0 to n-1 (inclusive). n must be non-zero, and
+// must fit in numBits bits. numBits must be at least 1 and less than 32.
+//
+// This is a more general version of UniformUint32 for testing.
 func uniformUint(src Source, n, numBits uint32) uint32 {
 	if n == 0 {
 		panic("n must be non-zero in call to UniformUint32")
@@ -20,8 +24,10 @@ func uniformUint(src Source, n, numBits uint32) uint32 {
 		panic("numBits must be less than 32")
 	}
 
-	// Mask off all but the lower numBits bits of v.
+	// Mask used to mask off all but the lower numBits bits
+	// of v and low.
 	mask := uint32(1)<<numBits - 1
+
 	v := src.Uint32() & mask
 	prod := uint64(v) * uint64(n)
 	low := uint32(prod) & mask
@@ -44,11 +50,15 @@ func uniformUint(src Source, n, numBits uint32) uint32 {
 	}
 }
 
+// singleSource is a source that returns only a single value, used for testing.
 type singleSource struct {
 	v         uint32
 	callCount uint32
 }
 
+// Uint32() returns the stored value of v for the first call, then 0xffffffff for the second call
+// (which should always be accepted), then panics on subsequent calls. Then callers can look at
+// the call count to determine what value was actually used.
 func (src *singleSource) Uint32() uint32 {
 	if src.callCount == 0 {
 		src.callCount++
@@ -63,16 +73,22 @@ func (src *singleSource) Uint32() uint32 {
 	panic("called when callCount > 1")
 }
 
+// testUniformUint loops through all numBits-bit values and checks to make sure that
+// uniformUint() returns the values 0 to n-1 an equal number of times, filtering out
+// the case where the first value is rejected.
 func testUniformUint(t *testing.T, n, numBits uint32) {
 	buckets := make([]int, n)
 	for v := uint32(0); v < (1 << numBits); v++ {
 		src := singleSource{v: v}
-		actual := uniformUint(&src, n, numBits)
+		u := uniformUint(&src, n, numBits)
 		if src.callCount == 2 {
+			// v was rejected, so continue.
 			continue
 		}
 		require.Equal(t, uint32(1), src.callCount)
-		buckets[actual]++
+		require.GreaterOrEqual(t, u, 0)
+		require.Less(t, u, n)
+		buckets[u]++
 	}
 	expectedCount := int((1 << numBits) / n)
 	for i := uint32(0); i < n; i++ {
@@ -80,6 +96,11 @@ func testUniformUint(t *testing.T, n, numBits uint32) {
 	}
 }
 
+// TestUniformUint exhaustively tests small values for numBits, and all possible values of n for each
+// value of numBits.
+//
+// We still have to test UniformUint32(), but this gives some confidence that the algorithm
+// works in general.
 func TestUniformUint(t *testing.T) {
 	t.Parallel()
 	for numBits := uint32(1); numBits < 10; numBits++ {
