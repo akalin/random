@@ -153,7 +153,18 @@ func testUniformUint32(t *testing.T, n uint32) {
 
 func TestUniformUint32(t *testing.T) {
 	t.Parallel()
-	for n := uint32(1); n < 500; n++ {
+	var ns []uint32
+	for i := uint32(0); i < 15; i++ {
+		n := uint32(1) << i
+		if i >= 2 {
+			ns = append(ns, n-1)
+		}
+		ns = append(ns, n)
+		if i >= 2 {
+			ns = append(ns, n+1)
+		}
+	}
+	for _, n := range ns {
 		testUniformUint32(t, n)
 	}
 }
