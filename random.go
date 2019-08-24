@@ -12,8 +12,8 @@ https://lemire.me/blog/2019/06/06/nearly-divisionless-random-integer-generation-
 http://www.pcg-random.org/posts/bounded-rands.html for more details; the following is a shorter and (hopefully)
 more intuitive explanation.
 
-Lemire's algorithm avoids expensive divisions and remainder operations as much as possible. How does it do that?
-The intuition is to start with this:
+Lemire's algorithm gets its speed by avoiding expensive divisions and remainder operations as much as possible.
+How does it do that? The intuition is to start with this:
 
   RandomFraction(src Source, n uint32) {
     return src.Uint32() * (n/2³²)
