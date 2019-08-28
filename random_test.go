@@ -10,7 +10,7 @@ import (
 // uniformUint returns a uniformly-distributed number in the range 0 to n-1 (inclusive). n must be non-zero, and
 // must fit in numBits bits. numBits must be at least 1 and less than 32.
 //
-// This is a more general version of UniformUint32 for testing.
+// This is a more general and simplified version of UniformUint32 for testing.
 func uniformUint(src Source, n, numBits uint32) uint32 {
 	if n == 0 {
 		panic("n must be non-zero in call to UniformUint32")
@@ -28,21 +28,10 @@ func uniformUint(src Source, n, numBits uint32) uint32 {
 	// of v and low.
 	mask := uint32(1)<<numBits - 1
 
-	v := src.Uint32() & mask
-	prod := uint64(v) * uint64(n)
-	low := uint32(prod) & mask
-	if low >= n {
-		return uint32(prod >> numBits)
-	}
-
 	threshold := (1 << numBits) % n
-	if low >= threshold {
-		return uint32(prod >> numBits)
-	}
-
 	for {
-		v = src.Uint32() & mask
-		prod = uint64(v) * uint64(n)
+		v := src.Uint32() & mask
+		prod := uint64(v) * uint64(n)
 		low := uint32(prod) & mask
 		if low >= threshold {
 			return uint32(prod >> numBits)
