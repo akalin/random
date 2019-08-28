@@ -2,6 +2,7 @@ package random
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -280,4 +281,42 @@ func TestUniformUint32Large(t *testing.T) {
 	}
 }
 
-// TODO: Benchmarks.
+func shuffleUniformUint32(src Source, start uint32) uint32 {
+	var sum uint32
+	for i := start; i > 0; i-- {
+		sum += UniformUint32(src, i)
+	}
+	return sum
+}
+
+func shuffleRand(r *rand.Rand, start int32) int32 {
+	var sum int32
+	for i := start; i > 0; i-- {
+		sum += rand.Int31n(i)
+	}
+	return sum
+}
+
+type randSource struct {
+	rand.Source
+}
+
+func (src randSource) Uint32() uint32 {
+	return uint32(src.Int63())
+}
+
+func BenchmarkSmallShuffleUniformUint32(b *testing.B) {
+	src := randSource{rand.NewSource(5)}
+	var sum uint32
+	for n := 0; n < b.N; n++ {
+		sum += shuffleUniformUint32(src, 0xffff)
+	}
+}
+
+func BenchmarkSmallShuffleRand(b *testing.B) {
+	r := rand.New(rand.NewSource(5))
+	var sum int32
+	for n := 0; n < b.N; n++ {
+		sum += shuffleRand(r, 0xffff)
+	}
+}
