@@ -2,7 +2,7 @@ package random
 
 // A Source represents a source of uniformly-distributed pseudo-random uint32 values in the range 0 to 2³²-1 (inclusive).
 type Source interface {
-	Uint32() uint32
+	Int63() int64
 }
 
 /*
@@ -149,7 +149,7 @@ func UniformUint32(src Source, n uint32) uint32 {
 
 	// As mentioned above, we have one more trick to avoid doing the remainder operation most of the time.
 	// First we pull out the first iteration of the loop:
-	v := src.Uint32()
+	v := uint32(src.Int63() >> 31)
 	prod := uint64(v) * uint64(n)
 	low := uint32(prod)
 	// Then we know that threshold < n, so if low ≥ n, then we already know that low ≥ threshold without having
@@ -173,7 +173,7 @@ func UniformUint32(src Source, n uint32) uint32 {
 
 	// Since we've already calculated threshold, we can just fall back to the loop described above.
 	for {
-		v = src.Uint32()
+		v = uint32(src.Int63() >> 31)
 		prod = uint64(v) * uint64(n)
 		low = uint32(prod)
 		if low >= threshold {
