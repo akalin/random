@@ -305,18 +305,20 @@ func (src randSource) Uint32() uint32 {
 	return uint32(src.Int63())
 }
 
+var smallUniformResult uint32
+
 func BenchmarkSmallShuffleUniformUint32(b *testing.B) {
 	src := randSource{rand.NewSource(5)}
-	var sum uint32
 	for n := 0; n < b.N; n++ {
-		sum += shuffleUniformUint32(src, 0xffff)
+		smallUniformResult += shuffleUniformUint32(src, 0xffff)
 	}
 }
 
+var smallRandResult int32
+
 func BenchmarkSmallShuffleRand(b *testing.B) {
 	r := rand.New(rand.NewSource(5))
-	var sum int32
 	for n := 0; n < b.N; n++ {
-		sum += shuffleRand(r, 0xffff)
+		smallRandResult += shuffleRand(r, 0xffff)
 	}
 }
