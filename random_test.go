@@ -39,27 +39,29 @@ func uniformUint(src Source, n, numBits uint32) uint32 {
 	}
 }
 
-// singleSource is a source that returns only a single value, used for testing.
-type singleSource struct {
-	v         uint32
+// testSource is a source that returns a series of values for testing.
+type testSource struct {
+	vs        []uint32
 	callCount uint32
 }
 
-// Uint32() returns the stored value of v for the first call, then 0xffffffff for the second call
-// (which should always be accepted), then panics on subsequent calls. Then callers can look at
-// the call count to determine what value was actually used.
-func (src *singleSource) Uint32() uint32 {
-	if src.callCount == 0 {
-		src.callCount++
-		return src.v
+// Uint32() returns the next value in vs, or panics if there aren't any left.
+func (src *testSource) Uint32() uint32 {
+	if src.callCount >= uint32(len(src.vs)) {
+		panic("ran out of vs to return")
 	}
 
-	if src.callCount == 1 {
-		src.callCount++
-		return 0xffffffff
-	}
+	i := src.callCount
+	src.callCount++
+	return src.vs[i]
+}
 
-	panic("called when callCount > 1")
+func makeSingleSource(v uint32) testSource {
+	return testSource{vs: []uint32{v, 0xffffffff}}
+}
+
+func makeDoubleSource(v uint32) testSource {
+	return testSource{vs: []uint32{0x0, v, 0xffffffff}}
 }
 
 // testUniformUint loops through all numBits-bit values and checks to make sure that
@@ -68,7 +70,7 @@ func (src *singleSource) Uint32() uint32 {
 func testUniformUint(t *testing.T, n, numBits uint32) {
 	buckets := make([]uint32, n)
 	for v := uint32(0); v < (1 << numBits); v++ {
-		src := singleSource{v: v}
+		src := makeSingleSource(v)
 		u := uniformUint(&src, n, numBits)
 		if src.callCount == 2 {
 			// v was rejected, so continue.
@@ -108,12 +110,12 @@ func computeVStart(i, n uint32) uint64 {
 
 func testVStart(t *testing.T, i, n, vStart uint32) uint32 {
 	// Test vStart.
-	src := singleSource{v: vStart}
+	src := makeSingleSource(vStart)
 	u := UniformUint32(&src, n)
 	if src.callCount == 2 {
 		// vStart was rejected, so the actual vStart must be one higher.
 		vStart++
-		src = singleSource{v: vStart}
+		src = makeSingleSource(vStart)
 		u = UniformUint32(&src, n)
 	}
 	require.Equal(t, uint32(1), src.callCount)
@@ -122,7 +124,7 @@ func testVStart(t *testing.T, i, n, vStart uint32) uint32 {
 }
 
 func testV(t *testing.T, i, n, v uint32) {
-	src := singleSource{v: v}
+	src := makeSingleSource(v)
 	u := UniformUint32(&src, n)
 	require.Equal(t, uint32(1), src.callCount)
 	require.Equal(t, i, u)
@@ -161,38 +163,14 @@ func testUniformUint32(t *testing.T, n, delta uint32) {
 	require.Equal(t, vEnd, two32)
 }
 
-type doubleSource struct {
-	v         uint32
-	callCount uint32
-}
-
-func (src *doubleSource) Uint32() uint32 {
-	if src.callCount == 0 {
-		src.callCount++
-		return 0x0
-	}
-
-	if src.callCount == 1 {
-		src.callCount++
-		return src.v
-	}
-
-	if src.callCount == 2 {
-		src.callCount++
-		return 0xffffffff
-	}
-
-	panic("called when callCount > 2")
-}
-
 func testVStartDouble(t *testing.T, i, n, vStart uint32) uint32 {
 	// Test vStart.
-	src := doubleSource{v: vStart}
+	src := makeDoubleSource(vStart)
 	u := UniformUint32(&src, n)
 	if src.callCount == 3 {
 		// vStart was rejected, so the actual vStart must be one higher.
 		vStart++
-		src = doubleSource{v: vStart}
+		src = makeDoubleSource(vStart)
 		u = UniformUint32(&src, n)
 	}
 	require.Equal(t, uint32(2), src.callCount)
@@ -201,7 +179,7 @@ func testVStartDouble(t *testing.T, i, n, vStart uint32) uint32 {
 }
 
 func testVDouble(t *testing.T, i, n, v uint32) {
-	src := doubleSource{v: v}
+	src := makeDoubleSource(v)
 	u := UniformUint32(&src, n)
 	require.Equal(t, uint32(2), src.callCount)
 	require.Equal(t, i, u)
