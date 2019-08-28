@@ -161,18 +161,35 @@ func testUniformUint32(t *testing.T, n, delta uint32) {
 	require.Equal(t, vEnd, two32)
 }
 
-func TestUniformUint32Small(t *testing.T) {
+func TestUniformUint32SmallPowersOfTwo(t *testing.T) {
 	t.Parallel()
 	var ns []uint32
 	for i := uint32(0); i < 15; i++ {
+		ns = append(ns, uint32(1)<<i)
+	}
+	for _, n := range ns {
+		testUniformUint32(t, n, 1)
+	}
+}
+
+func TestUniformUint32LargePowersOfTwo(t *testing.T) {
+	t.Parallel()
+	var ns []uint32
+	for i := uint32(15); i < 32; i++ {
+		ns = append(ns, uint32(1)<<i)
+	}
+	for _, n := range ns {
+		testUniformUint32(t, n, n/1000)
+	}
+}
+
+func TestUniformUint32Small(t *testing.T) {
+	t.Parallel()
+	var ns []uint32
+	for i := uint32(2); i < 15; i++ {
 		n := uint32(1) << i
-		if i >= 2 {
-			ns = append(ns, n-1)
-		}
-		ns = append(ns, n)
-		if i >= 2 {
-			ns = append(ns, n+1)
-		}
+		ns = append(ns, n-1)
+		ns = append(ns, n+1)
 	}
 	for _, n := range ns {
 		testUniformUint32(t, n, 1)
@@ -184,13 +201,8 @@ func TestUniformUint32Medium(t *testing.T) {
 	var ns []uint32
 	for i := uint32(15); i < 32; i++ {
 		n := uint32(1) << i
-		if i >= 2 {
-			ns = append(ns, n-1)
-		}
-		ns = append(ns, n)
-		if i >= 2 {
-			ns = append(ns, n+1)
-		}
+		ns = append(ns, n-1)
+		ns = append(ns, n+1)
 	}
 	for _, n := range ns {
 		testUniformUint32(t, n, n/1000)
