@@ -102,47 +102,52 @@ func TestUniformUint(t *testing.T) {
 	}
 }
 
+func computeVStart(i, n uint32) uint64 {
+	return (uint64(i)<<32 + uint64(n-1)) / uint64(n)
+}
+
+func testVStart(t *testing.T, i, n, vStart uint32) uint32 {
+	// Test vStart.
+	src := singleSource{v: vStart}
+	u := UniformUint32(&src, n)
+	if src.callCount == 2 {
+		// vStart was rejected, so the actual vStart must be one higher.
+		vStart++
+		src = singleSource{v: vStart}
+		u = UniformUint32(&src, n)
+	}
+	require.Equal(t, uint32(1), src.callCount)
+	require.Equal(t, i, u)
+	return vStart
+}
+
+func testV(t *testing.T, i, n, v uint32) {
+	src := singleSource{v: v}
+	u := UniformUint32(&src, n)
+	require.Equal(t, uint32(1), src.callCount)
+	require.Equal(t, i, u)
+}
+
 func testUniformUint32(t *testing.T, n, delta uint32) {
 	two32 := uint64(1) << 32
 	// count and vEnd can be two32, so they both have to be uint64.
 	count := two32 / uint64(n)
 	var vEnd uint64
 	for i := uint32(0); i < n; {
-		// Set vStart to ceil((i*2³²) / n) and vEnd to ceil(((i+1)*2³²) / n).
-		//
-		// TODO: Explain why.
-		//
-		// Recall that ceil(a / b) can be calculated as floor(a + (b - 1) / b).
-		vStart := uint32((uint64(i)*two32 + uint64(n-1)) / uint64(n))
-		vEnd = ((uint64(i)+1)*two32 + uint64(n-1)) / uint64(n)
+		vStart := uint32(computeVStart(i, n))
+		vEnd = computeVStart(i+1, n)
 
-		// Test vStart.
-		src := singleSource{v: uint32(vStart)}
-		u := UniformUint32(&src, n)
-		if src.callCount == 2 {
-			// vStart was rejected, so the actual vStart must be one higher.
-			vStart++
-			src = singleSource{v: uint32(vStart)}
-			u = UniformUint32(&src, n)
-		}
-		require.Equal(t, uint32(1), src.callCount)
-		require.Equal(t, i, u)
+		vStart = testVStart(t, i, n, vStart)
 
 		// Test interval size.
 		require.Less(t, uint64(vStart), vEnd)
 		require.Equal(t, count, vEnd-uint64(vStart))
 
 		// Test last v.
-		src = singleSource{v: uint32(vEnd - 1)}
-		u = UniformUint32(&src, n)
-		require.Equal(t, uint32(1), src.callCount)
-		require.Equal(t, i, u)
+		testV(t, i, n, uint32(vEnd-1))
 
 		// Test a middle v.
-		src = singleSource{v: uint32(vStart) + uint32(count/2)}
-		u = UniformUint32(&src, n)
-		require.Equal(t, uint32(1), src.callCount)
-		require.Equal(t, i, u)
+		testV(t, i, n, uint32(vStart)+uint32(count/2))
 
 		if i == n-1 {
 			break
