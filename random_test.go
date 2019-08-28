@@ -305,6 +305,24 @@ func (src randSource) Uint32() uint32 {
 	return uint32(src.Int63())
 }
 
+var largeUniformResult uint32
+
+func BenchmarkLargeShuffleUniformUint32(b *testing.B) {
+	src := randSource{rand.NewSource(4)}
+	for n := 0; n < b.N; n++ {
+		largeUniformResult += shuffleUniformUint32(src, 0x0fffffff)
+	}
+}
+
+var largeRandResult int32
+
+func BenchmarkLargeShuffleRand(b *testing.B) {
+	r := rand.New(rand.NewSource(4))
+	for n := 0; n < b.N; n++ {
+		largeRandResult += shuffleRand(r, 0x0fffffff)
+	}
+}
+
 var smallUniformResult uint32
 
 func BenchmarkSmallShuffleUniformUint32(b *testing.B) {
