@@ -281,7 +281,7 @@ func TestUniformUint32Large(t *testing.T) {
 	}
 }
 
-func shuffleUniformUint32(src Source, start uint32) uint32 {
+func fakeShuffleUniformUint32(src Source, start uint32) uint32 {
 	var sum uint32
 	for i := start; i > 0; i-- {
 		sum += UniformUint32(src, i)
@@ -289,7 +289,7 @@ func shuffleUniformUint32(src Source, start uint32) uint32 {
 	return sum
 }
 
-func shuffleRand(r *rand.Rand, start int32) int32 {
+func fakeShuffleRand(r *rand.Rand, start int32) int32 {
 	var sum int32
 	for i := start; i > 0; i-- {
 		sum += rand.Int31n(i)
@@ -310,7 +310,7 @@ var largeUniformResult uint32
 func BenchmarkLargeShuffleUniformUint32(b *testing.B) {
 	src := randSource{rand.NewSource(4)}
 	for n := 0; n < b.N; n++ {
-		largeUniformResult += shuffleUniformUint32(src, 0x0fffffff)
+		largeUniformResult += fakeShuffleUniformUint32(src, 0x0fffffff)
 	}
 }
 
@@ -319,7 +319,7 @@ var largeRandResult int32
 func BenchmarkLargeShuffleRand(b *testing.B) {
 	r := rand.New(rand.NewSource(4))
 	for n := 0; n < b.N; n++ {
-		largeRandResult += shuffleRand(r, 0x0fffffff)
+		largeRandResult += fakeShuffleRand(r, 0x0fffffff)
 	}
 }
 
@@ -328,7 +328,7 @@ var smallUniformResult uint32
 func BenchmarkSmallShuffleUniformUint32(b *testing.B) {
 	src := randSource{rand.NewSource(5)}
 	for n := 0; n < b.N; n++ {
-		smallUniformResult += shuffleUniformUint32(src, 0xffff)
+		smallUniformResult += fakeShuffleUniformUint32(src, 0xffff)
 	}
 }
 
@@ -337,6 +337,46 @@ var smallRandResult int32
 func BenchmarkSmallShuffleRand(b *testing.B) {
 	r := rand.New(rand.NewSource(5))
 	for n := 0; n < b.N; n++ {
-		smallRandResult += shuffleRand(r, 0xffff)
+		smallRandResult += fakeShuffleRand(r, 0xffff)
+	}
+}
+
+func fakeAllRangesShuffleUniformUint32(src Source) uint32 {
+	var sum uint32
+	for bit := uint32(1); int32(bit) > 0; bit <<= 1 {
+		for i := uint32(0); i < 0x1000000; i++ {
+			bound := bit | (i & (bit - 1))
+			sum += UniformUint32(src, bound)
+		}
+	}
+	return sum
+}
+
+func fakeAllRangesShuffleRand(r *rand.Rand) int32 {
+	var sum int32
+	for bit := int32(1); bit > 0; bit <<= 1 {
+		for i := int32(0); i < 0x1000000; i++ {
+			bound := bit | (i & (bit - 1))
+			sum += r.Int31n(bound)
+		}
+	}
+	return sum
+}
+
+var allUniformResult uint32
+
+func BenchmarkAllRangesShuffleUniformUint32(b *testing.B) {
+	src := randSource{rand.NewSource(6)}
+	for n := 0; n < b.N; n++ {
+		allUniformResult += fakeAllRangesShuffleUniformUint32(src)
+	}
+}
+
+var allRandResult int32
+
+func BenchmarkAllRangesShuffleRand(b *testing.B) {
+	r := rand.New(rand.NewSource(6))
+	for n := 0; n < b.N; n++ {
+		allRandResult += fakeAllRangesShuffleRand(r)
 	}
 }
