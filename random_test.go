@@ -161,6 +161,85 @@ func testUniformUint32(t *testing.T, n, delta uint32) {
 	require.Equal(t, vEnd, two32)
 }
 
+type doubleSource struct {
+	v         uint32
+	callCount uint32
+}
+
+func (src *doubleSource) Uint32() uint32 {
+	if src.callCount == 0 {
+		src.callCount++
+		return 0x0
+	}
+
+	if src.callCount == 1 {
+		src.callCount++
+		return src.v
+	}
+
+	if src.callCount == 2 {
+		src.callCount++
+		return 0xffffffff
+	}
+
+	panic("called when callCount > 2")
+}
+
+func testVStartDouble(t *testing.T, i, n, vStart uint32) uint32 {
+	// Test vStart.
+	src := doubleSource{v: vStart}
+	u := UniformUint32(&src, n)
+	if src.callCount == 3 {
+		// vStart was rejected, so the actual vStart must be one higher.
+		vStart++
+		src = doubleSource{v: vStart}
+		u = UniformUint32(&src, n)
+	}
+	require.Equal(t, uint32(2), src.callCount)
+	require.Equal(t, i, u)
+	return vStart
+}
+
+func testVDouble(t *testing.T, i, n, v uint32) {
+	src := doubleSource{v: v}
+	u := UniformUint32(&src, n)
+	require.Equal(t, uint32(2), src.callCount)
+	require.Equal(t, i, u)
+}
+
+func testUniformUint32Double(t *testing.T, n, delta uint32) {
+	two32 := uint64(1) << 32
+	// count and vEnd can be two32, so they both have to be uint64.
+	count := two32 / uint64(n)
+	var vEnd uint64
+	for i := uint32(0); i < n; {
+		vStart := uint32(computeVStart(i, n))
+		vEnd = computeVStart(i+1, n)
+
+		vStart = testVStartDouble(t, i, n, vStart)
+
+		// Test interval size.
+		require.Less(t, uint64(vStart), vEnd)
+		require.Equal(t, count, vEnd-uint64(vStart))
+
+		// Test last v.
+		testVDouble(t, i, n, uint32(vEnd-1))
+
+		// Test a middle v.
+		testVDouble(t, i, n, uint32(vStart)+uint32(count/2))
+
+		if i == n-1 {
+			break
+		} else if (n - i) <= delta {
+			i = n - 1
+		} else {
+			i += delta
+		}
+	}
+
+	require.Equal(t, vEnd, two32)
+}
+
 func TestUniformUint32SmallPowersOfTwo(t *testing.T) {
 	t.Parallel()
 	var ns []uint32
@@ -193,6 +272,7 @@ func TestUniformUint32Small(t *testing.T) {
 	}
 	for _, n := range ns {
 		testUniformUint32(t, n, 1)
+		testUniformUint32Double(t, n, 1)
 	}
 }
 
@@ -206,6 +286,7 @@ func TestUniformUint32Medium(t *testing.T) {
 	}
 	for _, n := range ns {
 		testUniformUint32(t, n, n/1000)
+		testUniformUint32Double(t, n, n/1000)
 	}
 }
 
@@ -217,6 +298,7 @@ func TestUniformUint32Large(t *testing.T) {
 	}
 	for _, n := range ns {
 		testUniformUint32(t, n, n/1000)
+		testUniformUint32Double(t, n, n/1000)
 	}
 }
 
