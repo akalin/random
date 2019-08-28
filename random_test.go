@@ -281,20 +281,36 @@ func TestUniformUint32Large(t *testing.T) {
 	}
 }
 
-func fakeShuffleUniformUint32(src Source, start uint32) uint32 {
-	var sum uint32
-	for i := start; i > 0; i-- {
-		sum += UniformUint32(src, i)
+func shuffleUniformUint32(src Source, n int, swap func(i, j int)) {
+	if n < 0 {
+		panic("invalid argument to Shuffle")
 	}
-	return sum
+
+	i := n - 1
+	if i > 1<<31-1-1 {
+		panic("n too big")
+	}
+
+	for ; i > 0; i-- {
+		j := int(UniformUint32(src, uint32(i)))
+		swap(i, j)
+	}
 }
 
-func fakeShuffleRand(r *rand.Rand, start int32) int32 {
-	var sum int32
-	for i := start; i > 0; i-- {
-		sum += rand.Int31n(i)
+func shuffleRandInt31n(r *rand.Rand, n int, swap func(i, j int)) {
+	if n < 0 {
+		panic("invalid argument to Shuffle")
 	}
-	return sum
+
+	i := n - 1
+	if i > 1<<31-1-1 {
+		panic("n too big")
+	}
+
+	for ; i > 0; i-- {
+		j := int(r.Int31n(int32(i)))
+		swap(i, j)
+	}
 }
 
 type randSource struct {
@@ -305,39 +321,51 @@ func (src randSource) Uint32() uint32 {
 	return uint32(src.Int63())
 }
 
-var largeUniformResult uint32
+var largeUniformResult int
 
 func BenchmarkLargeShuffleUniformUint32(b *testing.B) {
 	src := randSource{rand.NewSource(4)}
+	swap := func(i, j int) {
+		largeUniformResult += i + j
+	}
 	for n := 0; n < b.N; n++ {
-		largeUniformResult += fakeShuffleUniformUint32(src, 0x0fffffff)
+		shuffleUniformUint32(src, 0x0fffffff, swap)
 	}
 }
 
-var largeRandResult int32
+var largeRandResult int
 
 func BenchmarkLargeShuffleRand(b *testing.B) {
 	r := rand.New(rand.NewSource(4))
+	swap := func(i, j int) {
+		largeRandResult += i + j
+	}
 	for n := 0; n < b.N; n++ {
-		largeRandResult += fakeShuffleRand(r, 0x0fffffff)
+		shuffleRandInt31n(r, 0x0fffffff, swap)
 	}
 }
 
-var smallUniformResult uint32
+var smallUniformResult int
 
 func BenchmarkSmallShuffleUniformUint32(b *testing.B) {
 	src := randSource{rand.NewSource(5)}
+	swap := func(i, j int) {
+		smallUniformResult += i + j
+	}
 	for n := 0; n < b.N; n++ {
-		smallUniformResult += fakeShuffleUniformUint32(src, 0xffff)
+		shuffleUniformUint32(src, 0xffff, swap)
 	}
 }
 
-var smallRandResult int32
+var smallRandResult int
 
 func BenchmarkSmallShuffleRand(b *testing.B) {
 	r := rand.New(rand.NewSource(5))
+	swap := func(i, j int) {
+		smallRandResult += i + j
+	}
 	for n := 0; n < b.N; n++ {
-		smallRandResult += fakeShuffleRand(r, 0xffff)
+		shuffleRandInt31n(r, 0xffff, swap)
 	}
 }
 
