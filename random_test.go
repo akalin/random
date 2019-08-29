@@ -8,13 +8,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// uniformUint returns a uniformly-distributed number in the range 0 to n-1 (inclusive). n must be non-zero, and
+// uintn returns a uniformly-distributed number in the range 0 to n-1 (inclusive). n must be non-zero, and
 // must fit in numBits bits. numBits must be at least 1 and less than 32.
 //
-// This is a more general and simplified version of UniformUint32 for testing.
-func uniformUint(src Source, n, numBits uint32) uint32 {
+// This is a more general and simplified version of Uint32n for testing.
+func uintn(src Source, n, numBits uint32) uint32 {
 	if n == 0 {
-		panic("n must be non-zero in call to UniformUint32")
+		panic("n must be non-zero in call to Uint32n")
 	}
 
 	if n >= 1<<numBits {
@@ -25,8 +25,7 @@ func uniformUint(src Source, n, numBits uint32) uint32 {
 		panic("numBits must be less than 32")
 	}
 
-	// Mask used to mask off all but the lower numBits bits
-	// of v and low.
+	// Mask used to mask off all but the lower numBits bits of v and low.
 	mask := uint32(1)<<numBits - 1
 
 	threshold := (1 << numBits) % n
@@ -66,13 +65,13 @@ func makeDoubleSource(v uint32) testSource {
 }
 
 // testUniformUint loops through all numBits-bit values and checks to make sure that
-// uniformUint() returns the values 0 to n-1 an equal number of times, filtering out
+// uintn() returns the values 0 to n-1 an equal number of times, filtering out
 // the case where the first value is rejected.
 func testUniformUint(t *testing.T, n, numBits uint32) {
 	buckets := make([]uint32, n)
 	for v := uint32(0); v < (1 << numBits); v++ {
 		src := makeSingleSource(v)
-		u := uniformUint(&src, n, numBits)
+		u := uintn(&src, n, numBits)
 		if src.callCount == 2 {
 			// v was rejected, so continue.
 			continue
@@ -90,7 +89,7 @@ func testUniformUint(t *testing.T, n, numBits uint32) {
 // TestUniformUint exhaustively tests small values for numBits, and all possible values of n for each
 // value of numBits.
 //
-// We still have to test UniformUint32(), but this gives some confidence that the algorithm
+// We still have to test Uint32n(), but this gives some confidence that the algorithm
 // works in general.
 func TestUniformUint(t *testing.T) {
 	t.Parallel()
@@ -112,12 +111,12 @@ func computeVStart(i, n uint32) uint64 {
 func testVStart(t *testing.T, i, n, vStart uint32) uint32 {
 	// Test vStart.
 	src := makeSingleSource(vStart)
-	u := UniformUint32(&src, n)
+	u := Uint32n(&src, n)
 	if src.callCount == 2 {
 		// vStart was rejected, so the actual vStart must be one higher.
 		vStart++
 		src = makeSingleSource(vStart)
-		u = UniformUint32(&src, n)
+		u = Uint32n(&src, n)
 	}
 	require.Equal(t, uint32(1), src.callCount)
 	require.Equal(t, i, u)
@@ -126,12 +125,12 @@ func testVStart(t *testing.T, i, n, vStart uint32) uint32 {
 
 func testV(t *testing.T, i, n, v uint32) {
 	src := makeSingleSource(v)
-	u := UniformUint32(&src, n)
+	u := Uint32n(&src, n)
 	require.Equal(t, uint32(1), src.callCount)
 	require.Equal(t, i, u)
 }
 
-func testUniformUint32(t *testing.T, n, delta uint32) {
+func testUint32n(t *testing.T, n, delta uint32) {
 	two32 := uint64(1) << 32
 	// count and vEnd can be two32, so they both have to be uint64.
 	count := two32 / uint64(n)
@@ -167,12 +166,12 @@ func testUniformUint32(t *testing.T, n, delta uint32) {
 func testVStartDouble(t *testing.T, i, n, vStart uint32) uint32 {
 	// Test vStart.
 	src := makeDoubleSource(vStart)
-	u := UniformUint32(&src, n)
+	u := Uint32n(&src, n)
 	if src.callCount == 3 {
 		// vStart was rejected, so the actual vStart must be one higher.
 		vStart++
 		src = makeDoubleSource(vStart)
-		u = UniformUint32(&src, n)
+		u = Uint32n(&src, n)
 	}
 	require.Equal(t, uint32(2), src.callCount)
 	require.Equal(t, i, u)
@@ -181,12 +180,12 @@ func testVStartDouble(t *testing.T, i, n, vStart uint32) uint32 {
 
 func testVDouble(t *testing.T, i, n, v uint32) {
 	src := makeDoubleSource(v)
-	u := UniformUint32(&src, n)
+	u := Uint32n(&src, n)
 	require.Equal(t, uint32(2), src.callCount)
 	require.Equal(t, i, u)
 }
 
-func testUniformUint32Double(t *testing.T, n, delta uint32) {
+func testUint32nDouble(t *testing.T, n, delta uint32) {
 	two32 := uint64(1) << 32
 	// count and vEnd can be two32, so they both have to be uint64.
 	count := two32 / uint64(n)
@@ -219,29 +218,29 @@ func testUniformUint32Double(t *testing.T, n, delta uint32) {
 	require.Equal(t, vEnd, two32)
 }
 
-func TestUniformUint32SmallPowersOfTwo(t *testing.T) {
+func TestUint32nSmallPowersOfTwo(t *testing.T) {
 	t.Parallel()
 	var ns []uint32
 	for i := uint32(0); i < 15; i++ {
 		ns = append(ns, uint32(1)<<i)
 	}
 	for _, n := range ns {
-		testUniformUint32(t, n, 1)
+		testUint32n(t, n, 1)
 	}
 }
 
-func TestUniformUint32LargePowersOfTwo(t *testing.T) {
+func TestUint32nLargePowersOfTwo(t *testing.T) {
 	t.Parallel()
 	var ns []uint32
 	for i := uint32(15); i < 32; i++ {
 		ns = append(ns, uint32(1)<<i)
 	}
 	for _, n := range ns {
-		testUniformUint32(t, n, n/1000)
+		testUint32n(t, n, n/1000)
 	}
 }
 
-func TestUniformUint32Small(t *testing.T) {
+func TestUint32nSmall(t *testing.T) {
 	t.Parallel()
 	var ns []uint32
 	for i := uint32(2); i < 15; i++ {
@@ -250,12 +249,12 @@ func TestUniformUint32Small(t *testing.T) {
 		ns = append(ns, n+1)
 	}
 	for _, n := range ns {
-		testUniformUint32(t, n, 1)
-		testUniformUint32Double(t, n, 1)
+		testUint32n(t, n, 1)
+		testUint32nDouble(t, n, 1)
 	}
 }
 
-func TestUniformUint32Medium(t *testing.T) {
+func TestUint32nMedium(t *testing.T) {
 	t.Parallel()
 	var ns []uint32
 	for i := uint32(15); i < 32; i++ {
@@ -264,27 +263,27 @@ func TestUniformUint32Medium(t *testing.T) {
 		ns = append(ns, n+1)
 	}
 	for _, n := range ns {
-		testUniformUint32(t, n, n/1000)
-		testUniformUint32Double(t, n, n/1000)
+		testUint32n(t, n, n/1000)
+		testUint32nDouble(t, n, n/1000)
 	}
 }
 
-func TestUniformUint32Large(t *testing.T) {
+func TestUint32nLarge(t *testing.T) {
 	t.Parallel()
 	var ns []uint32
 	for i := uint32(0); i < 100; i++ {
 		ns = append(ns, 0xffffffff-i)
 	}
 	for _, n := range ns {
-		testUniformUint32(t, n, n/1000)
-		testUniformUint32Double(t, n, n/1000)
+		testUint32n(t, n, n/1000)
+		testUint32nDouble(t, n, n/1000)
 	}
 }
 
-// shuffleUniformUint32 is a copy of rand.Shuffle() that uses UniformUint32() instead of rand.int31n().
-func shuffleUniformUint32(src Source, n int, swap func(i, j int)) {
+// shuffleUint32n is a copy of rand.Shuffle() that uses Uint32n() instead of rand.int31n().
+func shuffleUint32n(src Source, n int, swap func(i, j int)) {
 	if n < 0 {
-		panic("invalid argument to shuffleUniformUint32")
+		panic("invalid argument to shuffleUint32n")
 	}
 
 	i := n - 1
@@ -295,7 +294,7 @@ func shuffleUniformUint32(src Source, n int, swap func(i, j int)) {
 		swap(i, j)
 	}
 	for ; i > 0; i-- {
-		j := int(UniformUint32(src, uint32(i+1)))
+		j := int(Uint32n(src, uint32(i+1)))
 		swap(i, j)
 	}
 }
@@ -336,25 +335,25 @@ func shuffleRandInt31n(src Source, n int, swap func(i, j int)) {
 	}
 }
 
-// The BenchmarkLargeShuffle* (Small) functions benchmark a shuffle using UniformUint32 or randInt31n against
+// The BenchmarkLargeShuffle* (Small) functions benchmark a shuffle using Uint32n or randInt31n against
 // rand.Shuffle(), with a large (small) n and a no-op swap function.
 //
-// In my runs, shuffleUniformUint32() very slightly beats out rand.Shuffle(), probably because of better inlining,
+// In my runs, shuffleUint32n() very slightly beats out rand.Shuffle(), probably because of better inlining,
 // and both beat out shuffleRandInt31n().
 
 const largeN = 0x0fffffff
 const smallN = 0x0000ffff
 
 // This variable (and the similar ones below) are to prevent the compiler from optimizing the benchmarks out.
-var largeUniformUint32Result int
+var largeUint32nResult int
 
-func BenchmarkLargeShuffleUniformUint32(b *testing.B) {
+func BenchmarkLargeShuffleUint32n(b *testing.B) {
 	src := rand.NewSource(4)
 	swap := func(i, j int) {
-		largeUniformUint32Result += i + j
+		largeUint32nResult += i + j
 	}
 	for n := 0; n < b.N; n++ {
-		shuffleUniformUint32(src, largeN, swap)
+		shuffleUint32n(src, largeN, swap)
 	}
 }
 
@@ -382,15 +381,15 @@ func BenchmarkLargeRandShuffle(b *testing.B) {
 	}
 }
 
-var smallUniformUint32Result int
+var smallUint32nResult int
 
-func BenchmarkSmallShuffleUniformUint32(b *testing.B) {
+func BenchmarkSmallShuffleUint32n(b *testing.B) {
 	src := rand.NewSource(5)
 	swap := func(i, j int) {
-		smallUniformUint32Result += i + j
+		smallUint32nResult += i + j
 	}
 	for n := 0; n < b.N; n++ {
-		shuffleUniformUint32(src, smallN, swap)
+		shuffleUint32n(src, smallN, swap)
 	}
 }
 
