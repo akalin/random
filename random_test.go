@@ -206,7 +206,7 @@ func testUint32n(t *testing.T, rejectionCount int, n, nDelta, vPoints uint32) {
 	}
 }
 
-// TestUint32n*PowersOfTwo calls testUint32n for n = all powers of two. Since no values will
+// TestUint32n*PowersOfTwo calls testUint32n for n = all powers of two. Since no values of v will
 // be rejected for such values of n, we can always pass in 0 for rejectionCount.
 
 func TestUint32nSmallPowersOfTwo(t *testing.T) {
@@ -232,6 +232,10 @@ func TestUint32nLargePowersOfTwo(t *testing.T) {
 		testUint32n(t, 0, n, n>>9, 100)
 	}
 }
+
+// TestUint32n*CloseToPowerOfTwo calls testUint32n for n = all powers of two ±1. Since some values of v will
+// be rejected for such values of n, we test with various values of rejectionCount to cover the fast and slow
+// path of Uint32n.
 
 func TestUint32nSmallCloseToPowerOfTwo(t *testing.T) {
 	t.Parallel()
