@@ -16,7 +16,7 @@ http://www.pcg-random.org/posts/bounded-rands.html for more details; the followi
 more intuitive explanation.
 
 Lemire's algorithm gets its speed by avoiding expensive divisions and remainder operations as much as possible.
-How does it do that? The intuition is to start with this:
+How does it do that? The intuition is to start with this (assuming for simplicity that we have a src.Uint32() function):
 
   RandomFraction(src Source, n uint32) {
     return src.Uint32() * (n/2³²)
@@ -176,6 +176,7 @@ func Uint32n(src Source, n uint32) uint32 {
 
 	// Since we've already calculated threshold, we can just fall back to the loop described above.
 	for {
+		// Use the top 32 bits of src.Int63() to get a random uint32. This matches what rand.Uint32() does.
 		v = uint32(src.Int63() >> 31)
 		prod = uint64(v) * uint64(n)
 		low = uint32(prod)
