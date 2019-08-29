@@ -342,10 +342,11 @@ func shuffleRandInt31n(src Source, n int, swap func(i, j int)) {
 // In my runs, shuffleUniformUint32() very slightly beats out rand.Shuffle(), probably because of better inlining,
 // and both beat out shuffleRandInt31n().
 
-var largeUniformUint32Result int
-
 const largeN = 0x0fffffff
 const smallN = 0x0000ffff
+
+// This variable (and the similar ones below) are to prevent the compiler from optimizing the benchmarks out.
+var largeUniformUint32Result int
 
 func BenchmarkLargeShuffleUniformUint32(b *testing.B) {
 	src := rand.NewSource(4)
