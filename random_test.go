@@ -302,15 +302,14 @@ func TestUint32nLargeBetweenPowersOfTwo(t *testing.T) {
 	}
 }
 
-func TestUint32nLarge(t *testing.T) {
+// TestUint32nCloseToMax calls testUint32n for n close to 2³².
+func TestUint32nCloseToMax(t *testing.T) {
 	t.Parallel()
-	var ns []uint32
-	for i := uint32(0); i < 100; i++ {
-		ns = append(ns, 0xffffffff-i)
-	}
-	for _, n := range ns {
-		testUint32n(t, 0, n, n/1000, 2)
-		testUint32n(t, 1, n, n/1000, 2)
+	for i := uint32(0); i < 150; i++ {
+		n := 0xffffffff - i
+		for r := 0; r < 2; r++ {
+			testUint32n(t, r, n, n>>9, 80)
+		}
 	}
 }
 
