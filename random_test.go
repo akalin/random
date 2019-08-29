@@ -161,36 +161,47 @@ func testV(t *testing.T, rejectionCount int, i, n, v uint32) {
 	require.Equal(t, i, u)
 }
 
-func testUint32n(t *testing.T, rejectionCount int, n, nDelta, vPoints uint32) {
-	count := 0x100000000 / uint64(n)
-	for i := uint64(0); i < uint64(n); {
-		vStart := computeVStart(uint32(i), n)
-		vEnd := computeVStart(uint32(i+1), n)
+// testUint32ni computes the v range for the given value of i and n and tests that
+// the start and end of that range give i, and also vPoints number of points
+// in the middle of the range.
+func testUint32ni(t *testing.T, rejectionCount int, i, n, vPoints uint32) {
+	vStart := computeVStart(uint32(i), n)
+	vEnd := computeVStart(uint32(i+1), n)
 
-		vStart = uint64(testVStart(t, rejectionCount, uint32(i), n, uint32(vStart)))
+	vStart = uint64(testVStart(t, rejectionCount, uint32(i), n, uint32(vStart)))
 
-		require.Equal(t, count, vEnd-vStart)
+	expectedCount := 0x100000000 / uint64(n)
+	count := vEnd - vStart
+	require.Equal(t, expectedCount, count)
 
-		vDelta := (count + uint64(vPoints) - 1) / uint64(vPoints)
+	vDelta := (count + uint64(vPoints) - 1) / uint64(vPoints)
 
-		for v := vStart + uint64(vDelta); v < vEnd; {
-			testV(t, rejectionCount, uint32(i), n, uint32(v))
+	for v := vStart + uint64(vDelta); v < vEnd; {
+		testV(t, rejectionCount, uint32(i), n, uint32(v))
 
-			if v == vEnd-1 {
-				break
-			} else if (v + uint64(vDelta)) >= vEnd {
-				v = vEnd - 1
-			} else {
-				v += uint64(vDelta)
-			}
+		if v == vEnd-1 {
+			break
 		}
+
+		v += uint64(vDelta)
+		if v >= vEnd {
+			v = vEnd - 1
+		}
+	}
+}
+
+// testUint32n calls testUint32ni for 0 up to n-1, going up by nDelta.
+func testUint32n(t *testing.T, rejectionCount int, n, nDelta, vPoints uint32) {
+	for i := uint64(0); i < uint64(n); {
+		testUint32ni(t, rejectionCount, uint32(i), n, vPoints)
 
 		if i == uint64(n-1) {
 			break
-		} else if (i + uint64(nDelta)) >= uint64(n) {
+		}
+
+		i += uint64(nDelta)
+		if i >= uint64(n) {
 			i = uint64(n - 1)
-		} else {
-			i += uint64(nDelta)
 		}
 	}
 }
