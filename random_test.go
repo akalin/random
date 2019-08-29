@@ -283,7 +283,7 @@ func TestUniformUint32Large(t *testing.T) {
 
 func shuffleUniformUint32(src Source, n int, swap func(i, j int)) {
 	if n < 0 {
-		panic("invalid argument to Shuffle")
+		panic("invalid argument to shuffleUniformUint32")
 	}
 
 	i := n - 1
@@ -299,7 +299,7 @@ func shuffleUniformUint32(src Source, n int, swap func(i, j int)) {
 
 func shuffleRandInt31n(r *rand.Rand, n int, swap func(i, j int)) {
 	if n < 0 {
-		panic("invalid argument to Shuffle")
+		panic("invalid argument to shuffleRandInt31n")
 	}
 
 	i := n - 1
