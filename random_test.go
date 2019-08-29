@@ -337,7 +337,7 @@ func shuffleRandInt31n(src Source, n int, swap func(i, j int)) {
 }
 
 // The BenchmarkLargeShuffle* (Small) functions benchmark a shuffle using UniformUint32 or randInt31n against
-// rand.Shuffle(), // with a large (small) n and a no-op swap function.
+// rand.Shuffle(), with a large (small) n and a no-op swap function.
 
 var largeUniformUint32Result int
 
