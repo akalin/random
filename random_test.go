@@ -106,15 +106,7 @@ func computeVStart(i, n uint32) uint64 {
 	return (uint64(i)<<32 + uint64(n-1)) / uint64(n)
 }
 
-func testV(t *testing.T, rejectionCount int, i, n, v uint32) {
-	src := makeTestSource(rejectionCount, v)
-	u := Uint32n(&src, n)
-	require.Equal(t, rejectionCount+1, src.callCount)
-	require.Equal(t, i, u)
-}
-
 func testVStart(t *testing.T, rejectionCount int, i, n, vStart uint32) uint32 {
-	// Test vStart.
 	src := makeTestSource(rejectionCount, vStart)
 	u := Uint32n(&src, n)
 	if src.callCount == rejectionCount+2 {
@@ -126,6 +118,13 @@ func testVStart(t *testing.T, rejectionCount int, i, n, vStart uint32) uint32 {
 	require.Equal(t, rejectionCount+1, src.callCount)
 	require.Equal(t, i, u)
 	return vStart
+}
+
+func testV(t *testing.T, rejectionCount int, i, n, v uint32) {
+	src := makeTestSource(rejectionCount, v)
+	u := Uint32n(&src, n)
+	require.Equal(t, rejectionCount+1, src.callCount)
+	require.Equal(t, i, u)
 }
 
 func testUint32n(t *testing.T, rejectionCount int, n, delta uint32) {
@@ -163,22 +162,16 @@ func testUint32n(t *testing.T, rejectionCount int, n, delta uint32) {
 
 func TestUint32nSmallPowersOfTwo(t *testing.T) {
 	t.Parallel()
-	var ns []uint32
 	for i := uint32(0); i < 15; i++ {
-		ns = append(ns, uint32(1)<<i)
-	}
-	for _, n := range ns {
+		n := uint32(1) << i
 		testUint32n(t, 0, n, 1)
 	}
 }
 
 func TestUint32nLargePowersOfTwo(t *testing.T) {
 	t.Parallel()
-	var ns []uint32
 	for i := uint32(15); i < 32; i++ {
-		ns = append(ns, uint32(1)<<i)
-	}
-	for _, n := range ns {
+		n := uint32(1) << i
 		testUint32n(t, 0, n, n/1000)
 	}
 }
