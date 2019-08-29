@@ -124,6 +124,18 @@ func computeVStart(i, n uint32) uint64 {
 	return (uint64(i)<<32 + uint64(n-1)) / uint64(n)
 }
 
+func TestComputeVStart(t *testing.T) {
+	ns := []uint32{1, 2}
+	for i := uint32(2); i < 32; i++ {
+		n := uint32(1) << i
+		ns = append(ns, []uint32{n - 1, n, n + 1, uint32(3 * uint64(n) / 2)}...)
+	}
+	for _, n := range ns {
+		require.Equal(t, uint64(0), computeVStart(0, n))
+		require.Equal(t, uint64(0x100000000), computeVStart(n, n))
+	}
+}
+
 // testVStart checks that the given value of vStart (or the one after it, if n isn't a power of two)
 // does indeed make Uint32n(src, n) return i. It then returns the actual value of vStart.
 func testVStart(t *testing.T, rejectionCount int, i, n, vStart uint32) uint32 {
