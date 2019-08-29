@@ -31,7 +31,7 @@ func uniformUint(src Source, n, numBits uint32) uint32 {
 
 	threshold := (1 << numBits) % n
 	for {
-		v := src.Uint32() & mask
+		v := uint32(src.Int63()>>31) & mask
 		prod := uint64(v) * uint64(n)
 		low := uint32(prod) & mask
 		if low >= threshold {
@@ -47,14 +47,14 @@ type testSource struct {
 }
 
 // Uint32() returns the next value in vs, or panics if there aren't any left.
-func (src *testSource) Uint32() uint32 {
+func (src *testSource) Int63() int64 {
 	if src.callCount >= uint32(len(src.vs)) {
 		panic("ran out of vs to return")
 	}
 
 	i := src.callCount
 	src.callCount++
-	return src.vs[i]
+	return int64(src.vs[i])
 }
 
 func makeSingleSource(v uint32) testSource {
@@ -313,18 +313,10 @@ func shuffleRandInt31n(r *rand.Rand, n int, swap func(i, j int)) {
 	}
 }
 
-type randSource struct {
-	rand.Source
-}
-
-func (src randSource) Uint32() uint32 {
-	return uint32(src.Int63())
-}
-
 var largeUniformUint32Result int
 
 func BenchmarkLargeShuffleUniformUint32(b *testing.B) {
-	src := randSource{rand.NewSource(4)}
+	src := rand.NewSource(4)
 	swap := func(i, j int) {
 		largeUniformUint32Result += i + j
 	}
@@ -360,7 +352,7 @@ func BenchmarkLargeRandShuffle(b *testing.B) {
 var smallUniformUint32Result int
 
 func BenchmarkSmallShuffleUniformUint32(b *testing.B) {
-	src := randSource{rand.NewSource(5)}
+	src := rand.NewSource(5)
 	swap := func(i, j int) {
 		smallUniformUint32Result += i + j
 	}
@@ -371,7 +363,7 @@ func BenchmarkSmallShuffleUniformUint32(b *testing.B) {
 
 var smallInt31nResult int
 
-func BenchmarkSmallShuffleRand(b *testing.B) {
+func BenchmarkSmallShuffleRandInt31n(b *testing.B) {
 	r := rand.New(rand.NewSource(5))
 	swap := func(i, j int) {
 		smallInt31nResult += i + j
@@ -384,7 +376,7 @@ func BenchmarkSmallShuffleRand(b *testing.B) {
 var smallRandShuffleResult int
 
 func BenchmarkSmallRandShuffle(b *testing.B) {
-	r := rand.New(rand.NewSource(4))
+	r := rand.New(rand.NewSource(5))
 	swap := func(i, j int) {
 		smallRandShuffleResult += i + j
 	}
@@ -418,7 +410,7 @@ func fakeAllRangesShuffleRand(r *rand.Rand) int32 {
 var allUniformResult uint32
 
 func BenchmarkAllRangesShuffleUniformUint32(b *testing.B) {
-	src := randSource{rand.NewSource(6)}
+	src := rand.NewSource(6)
 	for n := 0; n < b.N; n++ {
 		allUniformResult += fakeAllRangesShuffleUniformUint32(src)
 	}
