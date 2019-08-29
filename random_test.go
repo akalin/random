@@ -61,21 +61,13 @@ func makeTestSource(rejectionCount int, v uint32) testSource {
 	return testSource{vs: append(vs, []uint32{v, 0xffffffff}...)}
 }
 
-func makeSingleSource(v uint32) testSource {
-	return testSource{vs: []uint32{v, 0xffffffff}}
-}
-
-func makeDoubleSource(v uint32) testSource {
-	return testSource{vs: []uint32{0x0, v, 0xffffffff}}
-}
-
 // testUniformUint loops through all numBits-bit values and checks to make sure that
 // uintn() returns the values 0 to n-1 an equal number of times, filtering out
 // the case where the first value is rejected.
 func testUniformUint(t *testing.T, n, numBits uint32) {
 	buckets := make([]uint32, n)
 	for v := uint32(0); v < (1 << numBits); v++ {
-		src := makeSingleSource(v)
+		src := makeTestSource(0, v)
 		u := uintn(&src, n, numBits)
 		if src.callCount == 2 {
 			// v was rejected, so continue.
