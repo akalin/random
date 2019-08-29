@@ -163,7 +163,6 @@ func Uint32n(src Source, n uint32) uint32 {
 
 	// Since we've already calculated threshold, we can just fall back to the loop described above.
 	for {
-		// Use the top 32 bits of src.Int63() to get a random uint32. This matches what rand.Uint32() does.
 		v = randUint32(src)
 		prod = uint64(v) * uint64(n)
 		low = uint32(prod)
