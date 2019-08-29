@@ -162,17 +162,13 @@ func testV(t *testing.T, rejectionCount int, i, n, v uint32) {
 }
 
 func testUint32n(t *testing.T, rejectionCount int, n, nDelta, vPoints uint32) {
-	two32 := uint64(1) << 32
-	count := two32 / uint64(n)
-	var vEnd uint64
+	count := 0x100000000 / uint64(n)
 	for i := uint64(0); i < uint64(n); {
 		vStart := computeVStart(uint32(i), n)
-		vEnd = computeVStart(uint32(i+1), n)
+		vEnd := computeVStart(uint32(i+1), n)
 
 		vStart = uint64(testVStart(t, rejectionCount, uint32(i), n, uint32(vStart)))
 
-		// Test interval size.
-		require.Less(t, vStart, vEnd)
 		require.Equal(t, count, vEnd-vStart)
 
 		vDelta := (count + uint64(vPoints) - 1) / uint64(vPoints)
@@ -197,8 +193,6 @@ func testUint32n(t *testing.T, rejectionCount int, n, nDelta, vPoints uint32) {
 			i += uint64(nDelta)
 		}
 	}
-
-	require.Equal(t, vEnd, two32)
 }
 
 func TestUint32nSmallPowersOfTwo(t *testing.T) {
