@@ -336,7 +336,13 @@ func shuffleRandInt31n(src Source, n int, swap func(i, j int)) {
 	}
 }
 
+// The BenchmarkLargeShuffle* (Small) functions benchmark a shuffle using UniformUint32 or randInt31n against
+// rand.Shuffle(), // with a large (small) n and a no-op swap function.
+
 var largeUniformUint32Result int
+
+const largeN = 0x0fffffff
+const smallN = 0x0000ffff
 
 func BenchmarkLargeShuffleUniformUint32(b *testing.B) {
 	src := rand.NewSource(4)
@@ -344,7 +350,7 @@ func BenchmarkLargeShuffleUniformUint32(b *testing.B) {
 		largeUniformUint32Result += i + j
 	}
 	for n := 0; n < b.N; n++ {
-		shuffleUniformUint32(src, 0x0fffffff, swap)
+		shuffleUniformUint32(src, largeN, swap)
 	}
 }
 
@@ -356,7 +362,7 @@ func BenchmarkLargeShuffleRandInt31n(b *testing.B) {
 		largeInt31nResult += i + j
 	}
 	for n := 0; n < b.N; n++ {
-		shuffleRandInt31n(src, 0x0fffffff, swap)
+		shuffleRandInt31n(src, largeN, swap)
 	}
 }
 
@@ -368,7 +374,7 @@ func BenchmarkLargeRandShuffle(b *testing.B) {
 		largeInt31nResult += i + j
 	}
 	for n := 0; n < b.N; n++ {
-		r.Shuffle(0x0fffffff, swap)
+		r.Shuffle(largeN, swap)
 	}
 }
 
@@ -380,7 +386,7 @@ func BenchmarkSmallShuffleUniformUint32(b *testing.B) {
 		smallUniformUint32Result += i + j
 	}
 	for n := 0; n < b.N; n++ {
-		shuffleUniformUint32(src, 0xffff, swap)
+		shuffleUniformUint32(src, smallN, swap)
 	}
 }
 
@@ -392,7 +398,7 @@ func BenchmarkSmallShuffleRandInt31n(b *testing.B) {
 		smallInt31nResult += i + j
 	}
 	for n := 0; n < b.N; n++ {
-		shuffleRandInt31n(src, 0xffff, swap)
+		shuffleRandInt31n(src, smallN, swap)
 	}
 }
 
@@ -404,7 +410,7 @@ func BenchmarkSmallRandShuffle(b *testing.B) {
 		smallRandShuffleResult += i + j
 	}
 	for n := 0; n < b.N; n++ {
-		r.Shuffle(0xffff, swap)
+		r.Shuffle(smallN, swap)
 	}
 }
 
