@@ -302,10 +302,10 @@ func shuffleUniformUint32(src Source, n int, swap func(i, j int)) {
 	}
 
 	i := n - 1
-	if i > 1<<31-1-1 {
-		panic("n too big")
+	for ; i > 1<<31-1-1; i-- {
+		j := int(src.Int63() % int64(i+1))
+		swap(i, j)
 	}
-
 	for ; i > 0; i-- {
 		j := int(UniformUint32(src, uint32(i+1)))
 		swap(i, j)
@@ -318,10 +318,10 @@ func shuffleRandInt31n(src Source, n int, swap func(i, j int)) {
 	}
 
 	i := n - 1
-	if i > 1<<31-1-1 {
-		panic("n too big")
+	for ; i > 1<<31-1-1; i-- {
+		j := int(src.Int63() % int64(i+1))
+		swap(i, j)
 	}
-
 	for ; i > 0; i-- {
 		j := int(int31n(src, int32(i+1)))
 		swap(i, j)
