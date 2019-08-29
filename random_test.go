@@ -125,7 +125,7 @@ func computeVStart(i, n uint32) uint64 {
 }
 
 // testVStart checks that the given value of vStart (or the one after it, if n isn't a power of two)
-// does indeed make Uint32n(src, n) return i.
+// does indeed make Uint32n(src, n) return i. It then returns the actual value of vStart.
 func testVStart(t *testing.T, rejectionCount int, i, n, vStart uint32) uint32 {
 	src := makeTestSource(rejectionCount, vStart)
 	u := Uint32n(&src, n)
@@ -148,33 +148,40 @@ func testV(t *testing.T, rejectionCount int, i, n, v uint32) {
 	require.Equal(t, i, u)
 }
 
-func testUint32n(t *testing.T, rejectionCount int, n, delta uint32) {
+func testUint32n(t *testing.T, rejectionCount int, n, nDelta, vPoints uint32) {
 	two32 := uint64(1) << 32
-	// count and vEnd can be two32, so they both have to be uint64.
 	count := two32 / uint64(n)
 	var vEnd uint64
-	for i := uint32(0); i < n; {
-		vStart := uint32(computeVStart(i, n))
-		vEnd = computeVStart(i+1, n)
+	for i := uint64(0); i < uint64(n); {
+		vStart := computeVStart(uint32(i), n)
+		vEnd = computeVStart(uint32(i+1), n)
 
-		vStart = testVStart(t, rejectionCount, i, n, vStart)
+		vStart = uint64(testVStart(t, rejectionCount, uint32(i), n, uint32(vStart)))
 
 		// Test interval size.
-		require.Less(t, uint64(vStart), vEnd)
-		require.Equal(t, count, vEnd-uint64(vStart))
+		require.Less(t, vStart, vEnd)
+		require.Equal(t, count, vEnd-vStart)
 
-		// Test last v.
-		testV(t, rejectionCount, i, n, uint32(vEnd-1))
+		vDelta := (count + uint64(vPoints) - 1) / uint64(vPoints)
 
-		// Test a middle v.
-		testV(t, rejectionCount, i, n, uint32(vStart)+uint32(count/2))
+		for v := vStart + uint64(vDelta); v < vEnd; {
+			testV(t, rejectionCount, uint32(i), n, uint32(v))
 
-		if i == n-1 {
+			if v == vEnd-1 {
+				break
+			} else if (v + uint64(vDelta)) >= vEnd {
+				v = vEnd - 1
+			} else {
+				v += uint64(vDelta)
+			}
+		}
+
+		if i == uint64(n-1) {
 			break
-		} else if (n - i) <= delta {
-			i = n - 1
+		} else if (i + uint64(nDelta)) >= uint64(n) {
+			i = uint64(n - 1)
 		} else {
-			i += delta
+			i += uint64(nDelta)
 		}
 	}
 
@@ -185,7 +192,7 @@ func TestUint32nSmallPowersOfTwo(t *testing.T) {
 	t.Parallel()
 	for i := uint32(0); i < 15; i++ {
 		n := uint32(1) << i
-		testUint32n(t, 0, n, 1)
+		testUint32n(t, 0, n, 1, 2)
 	}
 }
 
@@ -193,7 +200,7 @@ func TestUint32nLargePowersOfTwo(t *testing.T) {
 	t.Parallel()
 	for i := uint32(15); i < 32; i++ {
 		n := uint32(1) << i
-		testUint32n(t, 0, n, n/1000)
+		testUint32n(t, 0, n, n/1000, 2)
 	}
 }
 
@@ -206,8 +213,8 @@ func TestUint32nSmall(t *testing.T) {
 		ns = append(ns, n+1)
 	}
 	for _, n := range ns {
-		testUint32n(t, 0, n, 1)
-		testUint32n(t, 1, n, 1)
+		testUint32n(t, 0, n, 1, 2)
+		testUint32n(t, 1, n, 1, 2)
 	}
 }
 
@@ -220,8 +227,8 @@ func TestUint32nMedium(t *testing.T) {
 		ns = append(ns, n+1)
 	}
 	for _, n := range ns {
-		testUint32n(t, 0, n, n/1000)
-		testUint32n(t, 1, n, n/1000)
+		testUint32n(t, 0, n, n/1000, 2)
+		testUint32n(t, 1, n, n/1000, 2)
 	}
 }
 
@@ -232,8 +239,8 @@ func TestUint32nLarge(t *testing.T) {
 		ns = append(ns, 0xffffffff-i)
 	}
 	for _, n := range ns {
-		testUint32n(t, 0, n, n/1000)
-		testUint32n(t, 1, n, n/1000)
+		testUint32n(t, 0, n, n/1000, 2)
+		testUint32n(t, 1, n, n/1000, 2)
 	}
 }
 

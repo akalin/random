@@ -8,6 +8,10 @@ type Source interface {
 	Int63() int64
 }
 
+// TODO: Add refs to golang source code.
+//
+// TODO: Talk about int31n.
+
 /*
 The algorithm used by Uint32n() below is taken from Lemire's "Fast Random Integer Generation in an Interval",
 available at https://arxiv.org/abs/1805.10941 . See also
