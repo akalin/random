@@ -30,7 +30,7 @@ func uintn(src Source, n, numBits uint32) uint32 {
 
 	threshold := (1 << numBits) % n
 	for {
-		v := uint32(src.Int63()>>31) & mask
+		v := randUint32(src) & mask
 		prod := uint64(v) * uint64(n)
 		low := uint32(prod) & mask
 		if low >= threshold {
@@ -335,6 +335,10 @@ func shuffleUint32n(src Source, n int, swap func(i, j int)) {
 	}
 }
 
+func randInt32(src Source) int32 {
+	return int32(src.Int63() >> 32)
+}
+
 // randInt31n is a copy of rand.Int31n() that is called by shuffleRandInt31n
 // (and can be inlined by the compiler).
 func randInt31n(src Source, n int32) int32 {
@@ -342,12 +346,12 @@ func randInt31n(src Source, n int32) int32 {
 		panic("invalid argument to Int31n")
 	}
 	if n&(n-1) == 0 { // n is power of two, can mask
-		return int32(src.Int63()>>32) & (n - 1)
+		return randInt32(src) & (n - 1)
 	}
 	max := int32((1 << 31) - 1 - (1<<31)%uint32(n))
-	v := int32(src.Int63() >> 32)
+	v := randInt32(src)
 	for v > max {
-		v = int32(src.Int63() >> 32)
+		v = randInt32(src)
 	}
 	return v % n
 }

@@ -8,6 +8,10 @@ type Source interface {
 	Int63() int64
 }
 
+func randUint32(src Source) uint32 {
+	return uint32(src.Int63() >> 31)
+}
+
 // TODO: Add refs to golang source code.
 //
 // TODO: Talk about int31n.
@@ -20,10 +24,10 @@ http://www.pcg-random.org/posts/bounded-rands.html for more details; the followi
 more intuitive explanation.
 
 Lemire's algorithm gets its speed by avoiding expensive divisions and remainder operations as much as possible.
-How does it do that? The intuition is to start with this (assuming for simplicity that we have a src.Uint32() function):
+How does it do that? The intuition is to start with this:
 
   RandomFraction(src Source, n uint32) {
-    return src.Uint32() * (n/2³²)
+    return randUint32(src) * (n/2³²)
   }
 
 which, if all calculations were done exactly, would return a number at least 0 and less than n. The problem is that
@@ -32,16 +36,16 @@ solve this by doing the multiplication first (with 64-bit integers) and doing in
 division by 2³² with right-shifting by 32:
 
   BiasedUint32n(src Source, n uint32) {
-    return (uint64(src.Uint32()) * uint64(n)) >> 32
+    return (uint64(randUint32(src)) * uint64(n)) >> 32
   }
 
 so it looks like we've avoided all divisions entirely! But the new problem is that if n doesn't divide 2³²,
 rounding down means that some numbers will be returned more often than others, i.e. this random number generator
 is biased.
 
-How do we solve this? We do so by rejecting some values of src.Uint32() (i.e., trying again with a new call to src.Uint32()),
-and to decide which ones to reject, we look at the low 32 bits of src.Uint32()*n. The logic is the same if
-we work with 3-bit integers instead of 32-bit integers, so assume that instead of src.Uint32() we have src.Uint3(),
+How do we solve this? We do so by rejecting some values of randUint32(src) (i.e., trying again with a new call to randUint32(src)),
+and to decide which ones to reject, we look at the low 32 bits of randUint32(src)*n. The logic is the same if
+we work with 3-bit integers instead of 32-bit integers, so assume that instead of randUint32(src) we have src.Uint3(),
 which returns a number from 0 to 2³-1=7, and that n is restricted to be ≤ 7.
 
 As an example, take n=3. Then the possible values of:
@@ -120,7 +124,7 @@ Then we have the algorithm (in pseudocode):
   Uint32n(src Source, n uint32) {
     threshold := 2³² % n
     while True {
-      v := src.Uint32()
+      v := randUint32(src)
       prod := uint64(v) * uint64(n)
       high := prod >> 32
       low  := uint32(prod)
@@ -135,7 +139,7 @@ Now we have an unbiased algorithm that does exactly one remainder operation! Com
   SlowUint32n(src Source, n uint32) {
     threshold := 2³² - (2³² % n)
     while True {
-      v := src.Uint32()
+      v := randUint32(src)
       if v < threshold {
         return v % n
       }
@@ -156,7 +160,7 @@ func Uint32n(src Source, n uint32) uint32 {
 
 	// As mentioned above, we have one more trick to avoid doing the remainder operation most of the time.
 	// First we pull out the first iteration of the loop:
-	v := uint32(src.Int63() >> 31)
+	v := randUint32(src)
 	prod := uint64(v) * uint64(n)
 	low := uint32(prod)
 	// Then we know that threshold < n, so if low ≥ n, then we already know that low ≥ threshold without having
@@ -181,7 +185,7 @@ func Uint32n(src Source, n uint32) uint32 {
 	// Since we've already calculated threshold, we can just fall back to the loop described above.
 	for {
 		// Use the top 32 bits of src.Int63() to get a random uint32. This matches what rand.Uint32() does.
-		v = uint32(src.Int63() >> 31)
+		v = randUint32(src)
 		prod = uint64(v) * uint64(n)
 		low = uint32(prod)
 		if low >= threshold {
