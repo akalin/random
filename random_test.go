@@ -281,6 +281,7 @@ func TestUniformUint32Large(t *testing.T) {
 	}
 }
 
+// shuffleUniformUint32 is a copy of rand.Shuffle() that uses UniformUint32() instead of rand.int31n().
 func shuffleUniformUint32(src Source, n int, swap func(i, j int)) {
 	if n < 0 {
 		panic("invalid argument to shuffleUniformUint32")
@@ -288,6 +289,8 @@ func shuffleUniformUint32(src Source, n int, swap func(i, j int)) {
 
 	i := n - 1
 	for ; i > 1<<31-1-1; i-- {
+		// This is biased, but it's okay because it's never executed; we just have this here
+		// so that this function is as close as possible to rand.Shuffle().
 		j := int(src.Int63() % int64(i+1))
 		swap(i, j)
 	}
@@ -297,6 +300,8 @@ func shuffleUniformUint32(src Source, n int, swap func(i, j int)) {
 	}
 }
 
+// randInt31n is a copy of rand.Int31n() that is called by shuffleRandInt31n
+// (and can be inlined by the compiler).
 func randInt31n(src Source, n int32) int32 {
 	if n <= 0 {
 		panic("invalid argument to Int31n")
@@ -312,6 +317,7 @@ func randInt31n(src Source, n int32) int32 {
 	return v % n
 }
 
+// shuffleRandInt31n is a copy of rand.Shuffle() that uses randInt31n() instead of rand.int31n().
 func shuffleRandInt31n(src Source, n int, swap func(i, j int)) {
 	if n < 0 {
 		panic("invalid argument to shuffleRandInt31n")
@@ -319,6 +325,8 @@ func shuffleRandInt31n(src Source, n int, swap func(i, j int)) {
 
 	i := n - 1
 	for ; i > 1<<31-1-1; i-- {
+		// This is biased, but it's okay because it's never executed; we just have this here
+		// so that this function is as close as possible to rand.Shuffle().
 		j := int(src.Int63() % int64(i+1))
 		swap(i, j)
 	}
