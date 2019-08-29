@@ -23,7 +23,7 @@ How does it do that? The intuition is to start with this (assuming for simplicit
   }
 
 which, if all calculations were done exactly, would return a number at least 0 and less than n. The problem is that
-if n doesn't divide 2³² (i.e., n is not a power of two), the returned number wouldn't have a fractional part. We can
+if n doesn't divide 2³² (i.e., n is not a power of two), the returned number would have a fractional part. We can
 solve this by doing the multiplication first (with 64-bit integers) and doing integer division. We can also replace
 division by 2³² with right-shifting by 32:
 

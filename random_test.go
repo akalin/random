@@ -57,8 +57,15 @@ func (src *testSource) Int63() int64 {
 	return int64(src.vs[i]) << 31
 }
 
+// makeTestSource returns a test source that returns a value that'll be rejected by uint32n or uintn
+// rejectionCount times (assuming that the value of n isn't a power of two), then returns the given value,
+// then returns a value that will always be accepted. Then src.callCount can be checked to see what
+// actually happened.
 func makeTestSource(rejectionCount int, v uint32) testSource {
+	// The first group is always a big group, so 0 will always be rejected if
+	// n isn't a power of two.
 	vs := make([]uint32, rejectionCount)
+	// The last group is always a small group, so 0xffffffff will always be accepted.
 	return testSource{vs: append(vs, []uint32{v, 0xffffffff}...)}
 }
 
@@ -102,15 +109,28 @@ func TestUniformUint(t *testing.T) {
 	}
 }
 
+// It's infeasible to test Uint32n() exhaustively, so we need to think of something faster. Uint32n() is
+// monotonic with respect to v, meaning that for each possible return value of Uint32n(), there is a range
+// of v that would always return that value (except for maybe a single rejected value).
+// Therefore, we can check the behavior of Uint32n() at the boundaries of these ranges,
+// and also we can verify that the return value of Uint32n() doesn't change within a range.
+
+// computeVStart computes the start of the range for v that would make Uint32n(src, n) return i,
+// except that the first value in the range can possibly be rejected if n is not a power of two.
+// The end of the range is simply computeVStart(i+1, n).
 func computeVStart(i, n uint32) uint64 {
+	// Compute ceil((i*2³²)/n).
+	// Recall that ceil(a/b) == floor((a + (b - 1))/b).
 	return (uint64(i)<<32 + uint64(n-1)) / uint64(n)
 }
 
+// testVStart checks that the given value of vStart (or the one after it, if n isn't a power of two)
+// does indeed make Uint32n(src, n) return i.
 func testVStart(t *testing.T, rejectionCount int, i, n, vStart uint32) uint32 {
 	src := makeTestSource(rejectionCount, vStart)
 	u := Uint32n(&src, n)
-	if src.callCount == rejectionCount+2 {
-		// vStart was rejected, so the actual vStart must be one higher.
+	if n&(n-1) != 0 && src.callCount == rejectionCount+2 {
+		// n is not a power of two and vStart was rejected, so the actual vStart must be one higher.
 		vStart++
 		src = makeTestSource(rejectionCount, vStart)
 		u = Uint32n(&src, n)
@@ -120,6 +140,7 @@ func testVStart(t *testing.T, rejectionCount int, i, n, vStart uint32) uint32 {
 	return vStart
 }
 
+// testV checks that the given value of v does indeed make Uint32n(src, n) return i.
 func testV(t *testing.T, rejectionCount int, i, n, v uint32) {
 	src := makeTestSource(rejectionCount, v)
 	u := Uint32n(&src, n)
