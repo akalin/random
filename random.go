@@ -12,10 +12,6 @@ func randUint32(src Source) uint32 {
 	return uint32(src.Int63() >> 31)
 }
 
-// TODO: Add refs to golang source code.
-//
-// TODO: Talk about int31n.
-
 /*
 The algorithm used by Uint32n() below is taken from Lemire's "Fast Random Integer Generation in an Interval",
 available at https://arxiv.org/abs/1805.10941 . See also
@@ -131,6 +127,8 @@ see the comments in the function for details!
 */
 
 // Uint32n returns a uniformly-distributed number in the range 0 to n-1 (inclusive). n must be non-zero.
+//
+// This function is basically rand.int31n from https://golang.org/src/math/rand/rand.go , edited for clarity.
 func Uint32n(src Source, n uint32) uint32 {
 	if n == 0 {
 		panic("n must be non-zero in call to Uint32n")
