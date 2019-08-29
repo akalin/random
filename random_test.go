@@ -270,6 +270,38 @@ func TestUint32nLargeCloseToPowerOfTwo(t *testing.T) {
 	}
 }
 
+// TestUint32n*BetweenPowersOfTwo calls testUint32n for n ≈ (3/2) * all powers of two.
+
+func TestUint32nSmallBetweenPowersOfTwo(t *testing.T) {
+	t.Parallel()
+	for i := uint32(2); i < 10; i++ {
+		n := 3 * (uint32(1) << i) / 2
+		for r := 0; r < 3; r++ {
+			testUint32n(t, r, n, 1, 100)
+		}
+	}
+}
+
+func TestUint32nMediumBetweenPowersOfTwo(t *testing.T) {
+	t.Parallel()
+	for i := uint32(10); i < 17; i++ {
+		n := 3 * (uint32(1) << i) / 2
+		for r := 0; r < 2; r++ {
+			testUint32n(t, r, n, n>>9, 90)
+		}
+	}
+}
+
+func TestUint32nLargeBetweenPowersOfTwo(t *testing.T) {
+	t.Parallel()
+	for i := uint32(17); i < 32; i++ {
+		n := uint32(3 * (uint64(1) << i) / 2)
+		for r := 0; r < 2; r++ {
+			testUint32n(t, r, n, n>>9, 80)
+		}
+	}
+}
+
 func TestUint32nLarge(t *testing.T) {
 	t.Parallel()
 	var ns []uint32
