@@ -206,6 +206,9 @@ func testUint32n(t *testing.T, rejectionCount int, n, nDelta, vPoints uint32) {
 	}
 }
 
+// TestUint32n*PowersOfTwo calls testUint32n for n = all powers of two. Since no values will
+// be rejected for such values of n, we can always pass in 0 for rejectionCount.
+
 func TestUint32nSmallPowersOfTwo(t *testing.T) {
 	t.Parallel()
 	for i := uint32(0); i < 10; i++ {
@@ -226,35 +229,40 @@ func TestUint32nLargePowersOfTwo(t *testing.T) {
 	t.Parallel()
 	for i := uint32(17); i < 32; i++ {
 		n := uint32(1) << i
-		testUint32n(t, 0, n, n>>8, 100)
+		testUint32n(t, 0, n, n>>9, 100)
 	}
 }
 
-func TestUint32nSmall(t *testing.T) {
+func TestUint32nSmallCloseToPowerOfTwo(t *testing.T) {
 	t.Parallel()
-	var ns []uint32
-	for i := uint32(2); i < 15; i++ {
+	for i := uint32(2); i < 10; i++ {
 		n := uint32(1) << i
-		ns = append(ns, n-1)
-		ns = append(ns, n+1)
-	}
-	for _, n := range ns {
-		testUint32n(t, 0, n, 1, 2)
-		testUint32n(t, 1, n, 1, 2)
+		for r := 0; r < 3; r++ {
+			testUint32n(t, r, n-1, 1, 100)
+			testUint32n(t, r, n+1, 1, 100)
+		}
 	}
 }
 
-func TestUint32nMedium(t *testing.T) {
+func TestUint32nMediumCloseToPowerOfTwo(t *testing.T) {
 	t.Parallel()
-	var ns []uint32
-	for i := uint32(15); i < 32; i++ {
+	for i := uint32(10); i < 17; i++ {
 		n := uint32(1) << i
-		ns = append(ns, n-1)
-		ns = append(ns, n+1)
+		for r := 0; r < 2; r++ {
+			testUint32n(t, r, n-1, n>>9, 50)
+			testUint32n(t, r, n+1, n>>9, 50)
+		}
 	}
-	for _, n := range ns {
-		testUint32n(t, 0, n, n/1000, 2)
-		testUint32n(t, 1, n, n/1000, 2)
+}
+
+func TestUint32nLargeCloseToPowerOfTwo(t *testing.T) {
+	t.Parallel()
+	for i := uint32(17); i < 32; i++ {
+		n := uint32(1) << i
+		for r := 0; r < 2; r++ {
+			testUint32n(t, r, n-1, n>>9, 30)
+			testUint32n(t, r, n+1, n>>9, 30)
+		}
 	}
 }
 
