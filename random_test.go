@@ -313,6 +313,9 @@ func TestUint32nCloseToMax(t *testing.T) {
 	}
 }
 
+// Benchmarks
+// ----------
+
 // shuffleUint32n is a copy of rand.Shuffle() that uses Uint32n() instead of rand.int31n().
 func shuffleUint32n(src Source, n int, swap func(i, j int)) {
 	if n < 0 {
