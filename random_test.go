@@ -338,6 +338,9 @@ func shuffleRandInt31n(src Source, n int, swap func(i, j int)) {
 
 // The BenchmarkLargeShuffle* (Small) functions benchmark a shuffle using UniformUint32 or randInt31n against
 // rand.Shuffle(), with a large (small) n and a no-op swap function.
+//
+// In my runs, shuffleUniformUint32() very slightly beats out rand.Shuffle(), probably because of better inlining,
+// and both beat out shuffleRandInt31n().
 
 var largeUniformUint32Result int
 
