@@ -292,7 +292,7 @@ func shuffleUniformUint32(src Source, n int, swap func(i, j int)) {
 	}
 
 	for ; i > 0; i-- {
-		j := int(UniformUint32(src, uint32(i)))
+		j := int(UniformUint32(src, uint32(i+1)))
 		swap(i, j)
 	}
 }
@@ -308,7 +308,7 @@ func shuffleRandInt31n(r *rand.Rand, n int, swap func(i, j int)) {
 	}
 
 	for ; i > 0; i-- {
-		j := int(r.Int31n(int32(i)))
+		j := int(r.Int31n(int32(i + 1)))
 		swap(i, j)
 	}
 }
