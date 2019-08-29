@@ -1,6 +1,9 @@
 package random
 
-// A Source represents a source of uniformly-distributed pseudo-random uint32 values in the range 0 to 2³²-1 (inclusive).
+// A Source represents a source of uniformly-distributed pseudo-random int64 values in the range 0 to 2⁶³-1 (inclusive).
+//
+// We only need pseudo-random values in the range 0 to 2³²-1 (inclusive), but we also want rand.Source objects to
+// be usable directly.
 type Source interface {
 	Int63() int64
 }
