@@ -91,7 +91,7 @@ and
 
    prod % 2³² = uint32(prod).
 
-Then we have the algorithm (in pseudocode):
+Then we have the algorithm (in pseudocode): (***)
 
   Uint32n(src Source, n uint32) {
     threshold := 2³² % n
@@ -156,7 +156,7 @@ func Uint32n(src Source, n uint32) uint32 {
 		return uint32(prod >> 32)
 	}
 
-	// Since we've already calculated threshold, we can just fall back to the loop described above.
+	// Since we've already calculated threshold, we can just fall back to the loop described above (***).
 	for {
 		v = randUint32(src)
 		prod = uint64(v) * uint64(n)
