@@ -10,14 +10,14 @@ library, so first install it:
 go get -u github.com/stretchr/testify
 ```
 
-Then to run the tests, do
+Then to run the tests, make sure that this repository is in `$GOPATH/github.com/akalin/random`, and do
 
 ```
-go test -v .
+go test -v github.com/akalin/random
 ```
 
 and to run the benchmarks, do
 
 ```
-go test -v . -bench .
+go test -v github.com/akalin/random -bench .
 ```
