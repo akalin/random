@@ -8,7 +8,10 @@ type Source interface {
 	Int63() int64
 }
 
+// randUint32 turns the output of src.Int63() into a uniformly-distributed pseudo-random uint32 value in the range
+// 0 to 2³²-1 (inclusive).
 func randUint32(src Source) uint32 {
+	// Take the top 32 bits, copying rand.Uint32() from https://golang.org/src/math/rand/rand.go .
 	return uint32(src.Int63() >> 31)
 }
 
