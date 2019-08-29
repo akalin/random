@@ -281,21 +281,6 @@ func TestUniformUint32Large(t *testing.T) {
 	}
 }
 
-func int31n(src Source, n int32) int32 {
-	if n <= 0 {
-		panic("invalid argument to Int31n")
-	}
-	if n&(n-1) == 0 { // n is power of two, can mask
-		return int32(src.Int63()>>32) & (n - 1)
-	}
-	max := int32((1 << 31) - 1 - (1<<31)%uint32(n))
-	v := int32(src.Int63() >> 32)
-	for v > max {
-		v = int32(src.Int63() >> 32)
-	}
-	return v % n
-}
-
 func shuffleUniformUint32(src Source, n int, swap func(i, j int)) {
 	if n < 0 {
 		panic("invalid argument to shuffleUniformUint32")
@@ -312,6 +297,21 @@ func shuffleUniformUint32(src Source, n int, swap func(i, j int)) {
 	}
 }
 
+func randInt31n(src Source, n int32) int32 {
+	if n <= 0 {
+		panic("invalid argument to Int31n")
+	}
+	if n&(n-1) == 0 { // n is power of two, can mask
+		return int32(src.Int63()>>32) & (n - 1)
+	}
+	max := int32((1 << 31) - 1 - (1<<31)%uint32(n))
+	v := int32(src.Int63() >> 32)
+	for v > max {
+		v = int32(src.Int63() >> 32)
+	}
+	return v % n
+}
+
 func shuffleRandInt31n(src Source, n int, swap func(i, j int)) {
 	if n < 0 {
 		panic("invalid argument to shuffleRandInt31n")
@@ -323,7 +323,7 @@ func shuffleRandInt31n(src Source, n int, swap func(i, j int)) {
 		swap(i, j)
 	}
 	for ; i > 0; i-- {
-		j := int(int31n(src, int32(i+1)))
+		j := int(randInt31n(src, int32(i+1)))
 		swap(i, j)
 	}
 }
