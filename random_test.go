@@ -42,18 +42,23 @@ func uintn(src Source, n, numBits uint32) uint32 {
 // testSource is a source that returns a series of uint32 values for testing.
 type testSource struct {
 	vs        []uint32
-	callCount uint32
+	callCount int
 }
 
 // Int63() returns the next value in vs shifted up appropriately, or panics if there aren't any left.
 func (src *testSource) Int63() int64 {
-	if src.callCount >= uint32(len(src.vs)) {
+	if src.callCount >= len(src.vs) {
 		panic("ran out of vs to return")
 	}
 
 	i := src.callCount
 	src.callCount++
 	return int64(src.vs[i]) << 31
+}
+
+func makeTestSource(rejectionCount int, v uint32) testSource {
+	vs := make([]uint32, rejectionCount)
+	return testSource{vs: append(vs, []uint32{v, 0xffffffff}...)}
 }
 
 func makeSingleSource(v uint32) testSource {
@@ -76,7 +81,7 @@ func testUniformUint(t *testing.T, n, numBits uint32) {
 			// v was rejected, so continue.
 			continue
 		}
-		require.Equal(t, uint32(1), src.callCount)
+		require.Equal(t, 1, src.callCount)
 		require.Less(t, u, n)
 		buckets[u]++
 	}
@@ -108,29 +113,29 @@ func computeVStart(i, n uint32) uint64 {
 	return (uint64(i)<<32 + uint64(n-1)) / uint64(n)
 }
 
-func testVStart(t *testing.T, i, n, vStart uint32) uint32 {
-	// Test vStart.
-	src := makeSingleSource(vStart)
+func testV(t *testing.T, rejectionCount int, i, n, v uint32) {
+	src := makeTestSource(rejectionCount, v)
 	u := Uint32n(&src, n)
-	if src.callCount == 2 {
+	require.Equal(t, rejectionCount+1, src.callCount)
+	require.Equal(t, i, u)
+}
+
+func testVStart(t *testing.T, rejectionCount int, i, n, vStart uint32) uint32 {
+	// Test vStart.
+	src := makeTestSource(rejectionCount, vStart)
+	u := Uint32n(&src, n)
+	if src.callCount == rejectionCount+2 {
 		// vStart was rejected, so the actual vStart must be one higher.
 		vStart++
-		src = makeSingleSource(vStart)
+		src = makeTestSource(rejectionCount, vStart)
 		u = Uint32n(&src, n)
 	}
-	require.Equal(t, uint32(1), src.callCount)
+	require.Equal(t, rejectionCount+1, src.callCount)
 	require.Equal(t, i, u)
 	return vStart
 }
 
-func testV(t *testing.T, i, n, v uint32) {
-	src := makeSingleSource(v)
-	u := Uint32n(&src, n)
-	require.Equal(t, uint32(1), src.callCount)
-	require.Equal(t, i, u)
-}
-
-func testUint32n(t *testing.T, n, delta uint32) {
+func testUint32n(t *testing.T, rejectionCount int, n, delta uint32) {
 	two32 := uint64(1) << 32
 	// count and vEnd can be two32, so they both have to be uint64.
 	count := two32 / uint64(n)
@@ -139,72 +144,17 @@ func testUint32n(t *testing.T, n, delta uint32) {
 		vStart := uint32(computeVStart(i, n))
 		vEnd = computeVStart(i+1, n)
 
-		vStart = testVStart(t, i, n, vStart)
+		vStart = testVStart(t, rejectionCount, i, n, vStart)
 
 		// Test interval size.
 		require.Less(t, uint64(vStart), vEnd)
 		require.Equal(t, count, vEnd-uint64(vStart))
 
 		// Test last v.
-		testV(t, i, n, uint32(vEnd-1))
+		testV(t, rejectionCount, i, n, uint32(vEnd-1))
 
 		// Test a middle v.
-		testV(t, i, n, uint32(vStart)+uint32(count/2))
-
-		if i == n-1 {
-			break
-		} else if (n - i) <= delta {
-			i = n - 1
-		} else {
-			i += delta
-		}
-	}
-
-	require.Equal(t, vEnd, two32)
-}
-
-func testVStartDouble(t *testing.T, i, n, vStart uint32) uint32 {
-	// Test vStart.
-	src := makeDoubleSource(vStart)
-	u := Uint32n(&src, n)
-	if src.callCount == 3 {
-		// vStart was rejected, so the actual vStart must be one higher.
-		vStart++
-		src = makeDoubleSource(vStart)
-		u = Uint32n(&src, n)
-	}
-	require.Equal(t, uint32(2), src.callCount)
-	require.Equal(t, i, u)
-	return vStart
-}
-
-func testVDouble(t *testing.T, i, n, v uint32) {
-	src := makeDoubleSource(v)
-	u := Uint32n(&src, n)
-	require.Equal(t, uint32(2), src.callCount)
-	require.Equal(t, i, u)
-}
-
-func testUint32nDouble(t *testing.T, n, delta uint32) {
-	two32 := uint64(1) << 32
-	// count and vEnd can be two32, so they both have to be uint64.
-	count := two32 / uint64(n)
-	var vEnd uint64
-	for i := uint32(0); i < n; {
-		vStart := uint32(computeVStart(i, n))
-		vEnd = computeVStart(i+1, n)
-
-		vStart = testVStartDouble(t, i, n, vStart)
-
-		// Test interval size.
-		require.Less(t, uint64(vStart), vEnd)
-		require.Equal(t, count, vEnd-uint64(vStart))
-
-		// Test last v.
-		testVDouble(t, i, n, uint32(vEnd-1))
-
-		// Test a middle v.
-		testVDouble(t, i, n, uint32(vStart)+uint32(count/2))
+		testV(t, rejectionCount, i, n, uint32(vStart)+uint32(count/2))
 
 		if i == n-1 {
 			break
@@ -225,7 +175,7 @@ func TestUint32nSmallPowersOfTwo(t *testing.T) {
 		ns = append(ns, uint32(1)<<i)
 	}
 	for _, n := range ns {
-		testUint32n(t, n, 1)
+		testUint32n(t, 0, n, 1)
 	}
 }
 
@@ -236,7 +186,7 @@ func TestUint32nLargePowersOfTwo(t *testing.T) {
 		ns = append(ns, uint32(1)<<i)
 	}
 	for _, n := range ns {
-		testUint32n(t, n, n/1000)
+		testUint32n(t, 0, n, n/1000)
 	}
 }
 
@@ -249,8 +199,8 @@ func TestUint32nSmall(t *testing.T) {
 		ns = append(ns, n+1)
 	}
 	for _, n := range ns {
-		testUint32n(t, n, 1)
-		testUint32nDouble(t, n, 1)
+		testUint32n(t, 0, n, 1)
+		testUint32n(t, 1, n, 1)
 	}
 }
 
@@ -263,8 +213,8 @@ func TestUint32nMedium(t *testing.T) {
 		ns = append(ns, n+1)
 	}
 	for _, n := range ns {
-		testUint32n(t, n, n/1000)
-		testUint32nDouble(t, n, n/1000)
+		testUint32n(t, 0, n, n/1000)
+		testUint32n(t, 1, n, n/1000)
 	}
 }
 
@@ -275,8 +225,8 @@ func TestUint32nLarge(t *testing.T) {
 		ns = append(ns, 0xffffffff-i)
 	}
 	for _, n := range ns {
-		testUint32n(t, n, n/1000)
-		testUint32nDouble(t, n, n/1000)
+		testUint32n(t, 0, n, n/1000)
+		testUint32n(t, 1, n, n/1000)
 	}
 }
 
