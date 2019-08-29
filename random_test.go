@@ -45,7 +45,7 @@ type testSource struct {
 	callCount int
 }
 
-// Int63() returns the next value in vs shifted up appropriately, or panics if there aren't any left.
+// Int63() returns the next value in src.vs shifted up appropriately, or panics if there aren't any left.
 func (src *testSource) Int63() int64 {
 	if src.callCount >= len(src.vs) {
 		panic("ran out of vs to return")
@@ -53,6 +53,7 @@ func (src *testSource) Int63() int64 {
 
 	i := src.callCount
 	src.callCount++
+	// Uint32n() uses the top 32 bits.
 	return int64(src.vs[i]) << 31
 }
 
