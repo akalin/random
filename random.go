@@ -73,16 +73,11 @@ How do we decide what threshold to set for low? In general, the values of low fo
 
   low: k k+n k+2*n ... k+m*n
 
-where 0 ≤ k < n, and m is the largest integer such that k+m*n < 2³. We have k=0 for the first group, so we have
-
-  low: 0 n 2*n ... 2³ - 2³%n
-
-which has exactly ceil(2³/n) entries. If we let k increase, at some point k + 2³ - 2³%n will be too big to
-stay in the group, which is when k + 2³ - 2³%n == 2³, i.e. when k == 2³%n.
-
-Therefore, if we filter out values of v where low < 2³%n, then we remove a single entry from each big group,
-turning into a small group. Then all groups would have the same size, and we'd have a uniform distribution.
-(This is Lemma 4.1, the main result from Lemire's paper.)
+where 0 ≤ k < n, and m is the largest integer such that k+m*n < 2³. For the first group, k=0, and if we let k
+increase, at some point the rightmost entry will be too big to stay in the group. This correct threshold value
+is k == 2³%n, which is 2 for our example above. Therefore, if we filter out values of v where low < 2³%n,
+then we remove a single entry from each big group, turning into a small group. Then all groups would have the same size,
+and we'd have a uniform distribution. (This is Lemma 4.1, the main result from Lemire's paper.)
 
 What happens if n divides 2³ exactly? Then the threshold would be 2³ % n == 0, and we wouldn't filter out
 any values of v, as we would expect.
