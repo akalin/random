@@ -335,7 +335,10 @@ func shuffleUint32n(src Source, n int, swap func(i, j int)) {
 	}
 }
 
-func randInt32(src Source) int32 {
+// randInt31 turns the output of src.Int63() into a uniformly-distributed pseudo-random int32 value in the range
+// 0 to 2³¹-1 (inclusive).
+func randInt31(src Source) int32 {
+	// Take the top 31 bits, copying rand.Int31() from https://golang.org/src/math/rand/rand.go .
 	return int32(src.Int63() >> 32)
 }
 
@@ -347,12 +350,12 @@ func randInt31n(src Source, n int32) int32 {
 		panic("invalid argument to Int31n")
 	}
 	if n&(n-1) == 0 { // n is power of two, can mask
-		return randInt32(src) & (n - 1)
+		return randInt31(src) & (n - 1)
 	}
 	max := int32((1 << 31) - 1 - (1<<31)%uint32(n))
-	v := randInt32(src)
+	v := randInt31(src)
 	for v > max {
-		v = randInt32(src)
+		v = randInt31(src)
 	}
 	return v % n
 }
