@@ -124,6 +124,7 @@ func computeVStart(i, n uint32) uint64 {
 	return (uint64(i)<<32 + uint64(n-1)) / uint64(n)
 }
 
+// Test the boundary behaviors of computeVStart for various values of n.
 func TestComputeVStart(t *testing.T) {
 	ns := []uint32{1, 2}
 	for i := uint32(2); i < 32; i++ {
