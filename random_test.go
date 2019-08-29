@@ -281,6 +281,21 @@ func TestUniformUint32Large(t *testing.T) {
 	}
 }
 
+func int31n(src Source, n int32) int32 {
+	if n <= 0 {
+		panic("invalid argument to Int31n")
+	}
+	if n&(n-1) == 0 { // n is power of two, can mask
+		return int32(src.Int63()>>32) & (n - 1)
+	}
+	max := int32((1 << 31) - 1 - (1<<31)%uint32(n))
+	v := int32(src.Int63() >> 32)
+	for v > max {
+		v = int32(src.Int63() >> 32)
+	}
+	return v % n
+}
+
 func shuffleUniformUint32(src Source, n int, swap func(i, j int)) {
 	if n < 0 {
 		panic("invalid argument to shuffleUniformUint32")
@@ -297,7 +312,7 @@ func shuffleUniformUint32(src Source, n int, swap func(i, j int)) {
 	}
 }
 
-func shuffleRandInt31n(r *rand.Rand, n int, swap func(i, j int)) {
+func shuffleRandInt31n(src Source, n int, swap func(i, j int)) {
 	if n < 0 {
 		panic("invalid argument to shuffleRandInt31n")
 	}
@@ -308,7 +323,7 @@ func shuffleRandInt31n(r *rand.Rand, n int, swap func(i, j int)) {
 	}
 
 	for ; i > 0; i-- {
-		j := int(r.Int31n(int32(i + 1)))
+		j := int(int31n(src, int32(i+1)))
 		swap(i, j)
 	}
 }
@@ -328,12 +343,12 @@ func BenchmarkLargeShuffleUniformUint32(b *testing.B) {
 var largeInt31nResult int
 
 func BenchmarkLargeShuffleRandInt31n(b *testing.B) {
-	r := rand.New(rand.NewSource(4))
+	src := rand.NewSource(4)
 	swap := func(i, j int) {
 		largeInt31nResult += i + j
 	}
 	for n := 0; n < b.N; n++ {
-		shuffleRandInt31n(r, 0x0fffffff, swap)
+		shuffleRandInt31n(src, 0x0fffffff, swap)
 	}
 }
 
@@ -364,12 +379,12 @@ func BenchmarkSmallShuffleUniformUint32(b *testing.B) {
 var smallInt31nResult int
 
 func BenchmarkSmallShuffleRandInt31n(b *testing.B) {
-	r := rand.New(rand.NewSource(5))
+	src := rand.NewSource(5)
 	swap := func(i, j int) {
 		smallInt31nResult += i + j
 	}
 	for n := 0; n < b.N; n++ {
-		shuffleRandInt31n(r, 0xffff, swap)
+		shuffleRandInt31n(src, 0xffff, swap)
 	}
 }
 
