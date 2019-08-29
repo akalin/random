@@ -339,8 +339,9 @@ func randInt32(src Source) int32 {
 	return int32(src.Int63() >> 32)
 }
 
-// randInt31n is a copy of rand.Int31n() that is called by shuffleRandInt31n
-// (and can be inlined by the compiler).
+// randInt31n is a copy of rand.Int31n() that is called by shuffleRandInt31n. This is because having
+// shuffleRandInt31n call rand.Int31n() slows it down a bit (probably because it's not inlined),
+// and we want to show that the fastest that shuffleRandInt31n can be is still slower than shuffleUint32n.
 func randInt31n(src Source, n int32) int32 {
 	if n <= 0 {
 		panic("invalid argument to Int31n")
