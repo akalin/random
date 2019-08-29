@@ -2,8 +2,8 @@ package random
 
 // A Source represents a source of uniformly-distributed pseudo-random int64 values in the range 0 to 2⁶³-1 (inclusive).
 //
-// We only need pseudo-random values in the range 0 to 2³²-1 (inclusive), but we also want rand.Source objects to
-// be usable directly.
+// We only need pseudo-random values in the range 0 to 2³²-1 (inclusive), but we also want implementations of rand.Source
+// to also implement Source.
 type Source interface {
 	Int63() int64
 }
@@ -29,10 +29,10 @@ How does it do that? The intuition is to start with this:
     return randUint32(src) * (n/2³²)
   }
 
-which, if all calculations were done exactly, would return a number at least 0 and less than n. The problem is that
-if n doesn't divide 2³² (i.e., n is not a power of two), the returned number would have a fractional part. We can
-solve this by doing the multiplication first (with 64-bit integers) and doing integer division. We can also replace
-division by 2³² with right-shifting by 32:
+which, if all calculations were done exactly, would return a uniformly-distributed number at least 0 and less than n.
+The problem is that if n doesn't divide 2³² (i.e., n is not a power of two), the returned number would
+have a fractional part. We can solve this by doing the multiplication first (with 64-bit integers) and doing integer division.
+We can also replace division by 2³² with right-shifting by 32:
 
   BiasedUint32n(src Source, n uint32) {
     return (uint64(randUint32(src)) * uint64(n)) >> 32
@@ -126,7 +126,8 @@ see the comments in the function for details!
 
 // Uint32n returns a uniformly-distributed number in the range 0 to n-1 (inclusive). n must be non-zero.
 //
-// This function is basically rand.int31n from https://golang.org/src/math/rand/rand.go , edited for clarity.
+// This function is basically the internal function rand.int31n() from https://golang.org/src/math/rand/rand.go ,
+// edited for clarity.
 func Uint32n(src Source, n uint32) uint32 {
 	if n == 0 {
 		panic("n must be non-zero in call to Uint32n")
