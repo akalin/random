@@ -39,13 +39,13 @@ func uintn(src Source, n, numBits uint32) uint32 {
 	}
 }
 
-// testSource is a source that returns a series of values for testing.
+// testSource is a source that returns a series of uint32 values for testing.
 type testSource struct {
 	vs        []uint32
 	callCount uint32
 }
 
-// Uint32() returns the next value in vs, or panics if there aren't any left.
+// Int63() returns the next value in vs shifted up appropriately, or panics if there aren't any left.
 func (src *testSource) Int63() int64 {
 	if src.callCount >= uint32(len(src.vs)) {
 		panic("ran out of vs to return")
@@ -53,7 +53,7 @@ func (src *testSource) Int63() int64 {
 
 	i := src.callCount
 	src.callCount++
-	return int64(src.vs[i])
+	return int64(src.vs[i]) << 31
 }
 
 func makeSingleSource(v uint32) testSource {
