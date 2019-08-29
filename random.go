@@ -9,7 +9,7 @@ type Source interface {
 }
 
 /*
-The algorithm used by UniformUint32() below is taken from Lemire's "Fast Random Integer Generation in an Interval",
+The algorithm used by Uint32n() below is taken from Lemire's "Fast Random Integer Generation in an Interval",
 available at https://arxiv.org/abs/1805.10941 . See also
 https://lemire.me/blog/2019/06/06/nearly-divisionless-random-integer-generation-on-various-systems/ and
 http://www.pcg-random.org/posts/bounded-rands.html for more details; the following is a shorter and (hopefully)
@@ -27,7 +27,7 @@ if n doesn't divide 2³² (i.e., n is not a power of two), the returned number w
 solve this by doing the multiplication first (with 64-bit integers) and doing integer division. We can also replace
 division by 2³² with right-shifting by 32:
 
-  BiasedUint32(src Source, n uint32) {
+  BiasedUint32n(src Source, n uint32) {
     return (uint64(src.Uint32()) * uint64(n)) >> 32
   }
 
@@ -113,7 +113,7 @@ and
 
 Then we have the algorithm (in pseudocode):
 
-  UniformUint32(src Source, n uint32) {
+  Uint32n(src Source, n uint32) {
     threshold := 2³² % n
     while True {
       v := src.Uint32()
@@ -128,7 +128,7 @@ Then we have the algorithm (in pseudocode):
 
 Now we have an unbiased algorithm that does exactly one remainder operation! Compare this to the straightforward algorithm:
 
-  SlowUniformUint32(src Source, n uint32) {
+  SlowUint32n(src Source, n uint32) {
     threshold := 2³² - (2³² % n)
     while True {
       v := src.Uint32()
@@ -140,14 +140,14 @@ Now we have an unbiased algorithm that does exactly one remainder operation! Com
 
 which does at least two remainder operations.
 
-In fact, the final implementation of UniformUint32() avoids even the single remainder operation some of the time:
+In fact, the final implementation of Uint32n() avoids even the single remainder operation some of the time:
 see the comments in the function for details!
 */
 
-// UniformUint32 returns a uniformly-distributed number in the range 0 to n-1 (inclusive). n must be non-zero.
-func UniformUint32(src Source, n uint32) uint32 {
+// Uint32n returns a uniformly-distributed number in the range 0 to n-1 (inclusive). n must be non-zero.
+func Uint32n(src Source, n uint32) uint32 {
 	if n == 0 {
-		panic("n must be non-zero in call to UniformUint32")
+		panic("n must be non-zero in call to Uint32n")
 	}
 
 	// As mentioned above, we have one more trick to avoid doing the remainder operation most of the time.
