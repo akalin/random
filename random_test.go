@@ -176,34 +176,20 @@ func testUint32ni(t *testing.T, rejectionCount int, i, n, vPoints uint32) {
 
 	vDelta := (count + uint64(vPoints) - 1) / uint64(vPoints)
 
-	for v := vStart + uint64(vDelta); v < vEnd; {
+	// TODO: Test before start and after end
+
+	for v := vStart + uint64(vDelta); v < vEnd-1; v += uint64(vDelta) {
 		testV(t, rejectionCount, uint32(i), n, uint32(v))
-
-		if v == vEnd-1 {
-			break
-		}
-
-		v += uint64(vDelta)
-		if v >= vEnd {
-			v = vEnd - 1
-		}
 	}
+	testV(t, rejectionCount, uint32(i), n, uint32(vEnd-1))
 }
 
 // testUint32n calls testUint32ni for 0 up to n-1, going up by nDelta.
 func testUint32n(t *testing.T, rejectionCount int, n, nDelta, vPoints uint32) {
-	for i := uint64(0); i < uint64(n); {
+	for i := uint64(0); i < uint64(n-1); i += uint64(nDelta) {
 		testUint32ni(t, rejectionCount, uint32(i), n, vPoints)
-
-		if i == uint64(n-1) {
-			break
-		}
-
-		i += uint64(nDelta)
-		if i >= uint64(n) {
-			i = uint64(n - 1)
-		}
 	}
+	testUint32ni(t, rejectionCount, n-1, n, vPoints)
 }
 
 // TestUint32n*PowersOfTwo calls testUint32n for n = all powers of two. Since no values of v will
