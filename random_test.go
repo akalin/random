@@ -161,35 +161,49 @@ func testV(t *testing.T, rejectionCount int, i, n, v uint32) {
 	require.Equal(t, i, u)
 }
 
-// testUint32ni computes the v range for the given value of i and n and tests that
-// the start and end of that range give i, and also vPoints number of points
+// testUint32i computes the v range for the given value of i and n, and checks
+// the values at the boundaries of the range and vPoints number of points
 // in the middle of the range.
-func testUint32ni(t *testing.T, rejectionCount int, i, n, vPoints uint32) {
+func testUint32i(t *testing.T, rejectionCount int, i, n, vPoints uint32) {
 	vStart := computeVStart(uint32(i), n)
 	vEnd := computeVStart(uint32(i+1), n)
 
-	vStart = uint64(testVStart(t, rejectionCount, uint32(i), n, uint32(vStart)))
+	// Check that vStart-1 yields (i - 1) (mod n).
+	var iPrev uint32
+	if i == 0 {
+		iPrev = n - 1
+	} else {
+		iPrev = (i - 1) % n
+	}
+	testV(t, rejectionCount, iPrev, n, uint32(vStart-1))
 
+	// Check that vStart yields i (mod n).
+	vStart = uint64(testVStart(t, rejectionCount, i, n, uint32(vStart)))
+
+	// Check that the range is the right size.
 	expectedCount := 0x100000000 / uint64(n)
 	count := vEnd - vStart
 	require.Equal(t, expectedCount, count)
 
+	// Check that points in the middle of the range yield i (mod n).
 	vDelta := (count + uint64(vPoints) - 1) / uint64(vPoints)
-
-	// TODO: Test before start and after end
-
 	for v := vStart + uint64(vDelta); v < vEnd-1; v += uint64(vDelta) {
-		testV(t, rejectionCount, uint32(i), n, uint32(v))
+		testV(t, rejectionCount, i, n, uint32(v))
 	}
-	testV(t, rejectionCount, uint32(i), n, uint32(vEnd-1))
+
+	// Check that vEnd-1 yields i (mod n).
+	testV(t, rejectionCount, i, n, uint32(vEnd-1))
+
+	// Check that vEnd yields (i + 1) (mod n).
+	testVStart(t, rejectionCount, (i+1)%n, n, uint32(vEnd))
 }
 
-// testUint32n calls testUint32ni for 0 up to n-1, going up by nDelta.
+// testUint32n calls testUint32i for 0 up to n-1, going up by nDelta.
 func testUint32n(t *testing.T, rejectionCount int, n, nDelta, vPoints uint32) {
 	for i := uint64(0); i < uint64(n-1); i += uint64(nDelta) {
-		testUint32ni(t, rejectionCount, uint32(i), n, vPoints)
+		testUint32i(t, rejectionCount, uint32(i), n, vPoints)
 	}
-	testUint32ni(t, rejectionCount, n-1, n, vPoints)
+	testUint32i(t, rejectionCount, n-1, n, vPoints)
 }
 
 // TestUint32n*PowersOfTwo calls testUint32n for n = all powers of two. Since no values of v will
