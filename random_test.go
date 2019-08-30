@@ -316,6 +316,24 @@ func TestUint32nCloseToMax(t *testing.T) {
 // Benchmarks
 // ----------
 
+// randInt63n is a copy of rand.Int63n() that is called by shuffleUint32n() and shuffleRandInt31n().
+// It's actually never executed; we just have this here so that the shuffle functions are as close
+// as possible to rand.Shuffle().
+func randInt63n(src Source, n int64) int64 {
+	if n <= 0 {
+		panic("invalid argument to Int63n")
+	}
+	if n&(n-1) == 0 { // n is power of two, can mask
+		return src.Int63() & (n - 1)
+	}
+	max := int64((1 << 63) - 1 - (1<<63)%uint64(n))
+	v := src.Int63()
+	for v > max {
+		v = src.Int63()
+	}
+	return v % n
+}
+
 // shuffleUint32n is a copy of rand.Shuffle() that uses Uint32n() instead of rand.int31n().
 func shuffleUint32n(src Source, n int, swap func(i, j int)) {
 	if n < 0 {
@@ -324,9 +342,7 @@ func shuffleUint32n(src Source, n int, swap func(i, j int)) {
 
 	i := n - 1
 	for ; i > 1<<31-1-1; i-- {
-		// This is biased, but it's okay because it's never executed; we just have this here
-		// so that this function is as close as possible to rand.Shuffle().
-		j := int(src.Int63() % int64(i+1))
+		j := int(randInt63n(src, int64(i+1)))
 		swap(i, j)
 	}
 	for ; i > 0; i-- {
@@ -368,9 +384,7 @@ func shuffleRandInt31n(src Source, n int, swap func(i, j int)) {
 
 	i := n - 1
 	for ; i > 1<<31-1-1; i-- {
-		// This is biased, but it's okay because it's never executed; we just have this here
-		// so that this function is as close as possible to rand.Shuffle().
-		j := int(src.Int63() % int64(i+1))
+		j := int(randInt63n(src, int64(i+1)))
 		swap(i, j)
 	}
 	for ; i > 0; i-- {
