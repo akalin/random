@@ -75,7 +75,7 @@ How do we decide what threshold to set for low? In general, the values of low fo
 
 where 0 ≤ k < n, and m is the largest integer such that k+m*n < 2³. For the first group, k=0, and if we let k
 increase, at some point the rightmost entry will be too big to stay in the group. This correct threshold value
-is k == 2³%n, which is 2 for our example above. Therefore, if we filter out values of v where low < 2³%n,
+is k == 2³ % n, which is 2 for our example above. Therefore, if we filter out values of v where low < 2³ % n,
 then we remove a single entry from each big group, turning into a small group. Then all groups would have the same size,
 and we'd have a uniform distribution. (This is Lemma 4.1, the main result from Lemire's paper.)
 
