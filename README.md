@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/keybase/saltpack.svg?branch=master)](https://travis-ci.org/akalin/random)
+[![GoDoc](https://godoc.org/github.com/akalin/random?status.svg)](https://godoc.org/github.com/akalin/random)
+
 This repository contains a Go implementation of Lemire's ["Fast Random Integer Generation in an Interval"](https://arxiv.org/abs/1805.10941). See also
 [Lemire's blog post](https://lemire.me/blog/2019/06/06/nearly-divisionless-random-integer-generation-on-various-systems/) and
 [this blog post](http://www.pcg-random.org/posts/bounded-rands.html) for more details.
